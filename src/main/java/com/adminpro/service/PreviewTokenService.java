@@ -33,25 +33,6 @@ public class PreviewTokenService {
 
     public Long validateToken(String token) {
         cleanExpiredTokens();
-        // ... (el resto igual)
-        TokenData data = tokens.get(token);
-        // ...
-        return data.documentId();
-    }
-
-    private void cleanExpiredTokens() {
-        long now = System.currentTimeMillis();
-        tokens.entrySet().removeIf(entry -> {
-            boolean expired = now > entry.getValue().expiryTime();
-            if (expired) {
-                docToToken.remove(entry.getValue().documentId());
-            }
-            return expired;
-        });
-    }
-
-    public Long validateToken(String token) {
-        cleanExpiredTokens();
         if (token == null) {
             return null;
         }
@@ -68,6 +49,12 @@ public class PreviewTokenService {
 
     private void cleanExpiredTokens() {
         long now = System.currentTimeMillis();
-        tokens.entrySet().removeIf(entry -> now > entry.getValue().expiryTime());
+        tokens.entrySet().removeIf(entry -> {
+            boolean expired = now > entry.getValue().expiryTime();
+            if (expired) {
+                docToToken.remove(entry.getValue().documentId());
+            }
+            return expired;
+        });
     }
 }
