@@ -236,6 +236,19 @@ public class DocumentController {
             .body(resource);
     }
 
+    @PostMapping("/renombrar/{id}")
+    public String renameDocument(@PathVariable Long id, @RequestParam String newName, RedirectAttributes ra) {
+        documentRepository.findById(id).ifPresent(doc -> {
+            String oldName = doc.getName();
+            String ext = oldName.contains(".") ? oldName.substring(oldName.lastIndexOf(".")) : "";
+            doc.setName(newName + ext);
+            documentRepository.save(doc);
+            activityLog.log("DOCUMENTS", "RENAME", "Documento '" + oldName + "' renombrado a '" + doc.getName() + "'");
+        });
+        ra.addFlashAttribute("successMsg", "Documento renombrado.");
+        return "redirect:/documentos";
+    }
+
     @PostMapping("/eliminar/{id}")
     public String deleteDocument(@PathVariable Long id, RedirectAttributes ra) {
         Document doc = documentRepository.findById(id).orElse(null);
