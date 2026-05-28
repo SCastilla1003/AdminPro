@@ -25,7 +25,7 @@ public class PreviewTokenService {
         }
 
         String token = UUID.randomUUID().toString();
-        long expiryTime = System.currentTimeMillis() + 60000; // 60 seconds
+        long expiryTime = System.currentTimeMillis() + 300000; // 5 minutes
         tokens.put(token, new TokenData(documentId, expiryTime));
         docToToken.put(documentId, token);
         return token;
