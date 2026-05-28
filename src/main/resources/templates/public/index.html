@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdminPro — Optimiza hoy, crece mañana</title>
+  <meta name="description" content="AdminPro: plataforma empresarial para optimizar los procesos organizacionales de microempresas en Cartagena. Nómina, Inventario, Chat Corporativo y más.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/output.css">
+</head>
+<body class="bg-white text-slate-800 font-sans antialiased">
+
+  <!-- ===== NAVBAR ===== -->
+  <header id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+    <nav class="glass border-b border-white/20 px-6 py-4">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <!-- Logo -->
+        <a href="/" class="flex items-center gap-3 group">
+			<div class="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-blue-500/30 group-hover:shadow-blue-500/50 transition-shadow">
+			  <img src="/images/logo.png" alt="AdminPro Logo" class="w-full h-full object-contain">
+			</div>
+          <span class="text-xl font-bold text-gradient">AdminPro</span>
+        </a>
+
+        <!-- Nav links -->
+        <div class="hidden md:flex items-center gap-8">
+          <a href="#" class="text-slate-600 hover:text-blue-600 font-medium transition-colors text-sm">Inicio</a>
+          <a href="#modulos" class="text-slate-600 hover:text-blue-600 font-medium transition-colors text-sm">Módulos</a>
+          <a href="#nosotros" class="text-slate-600 hover:text-blue-600 font-medium transition-colors text-sm">Nosotros</a>
+        </div>
+
+        <!-- CTA -->
+        <a href="/login" id="nav-login-btn"
+           class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-200 text-sm">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+          </svg>
+          Iniciar Sesión
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ===== HERO ===== -->
+  <section id="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <!-- Gradient background -->
+    <div class="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"></div>
+    <!-- Decorative blobs -->
+    <div class="absolute top-20 -left-40 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-20 -right-40 w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-300/10 rounded-full blur-3xl"></div>
+
+    <div class="relative z-10 max-w-7xl mx-auto px-6 pt-24 pb-16 flex flex-col lg:flex-row items-center gap-16">
+      <!-- Text -->
+      <div class="flex-1 text-center lg:text-left">
+        <div class="inline-flex items-center gap-2 bg-blue-100 text-blue-700 rounded-full px-4 py-1.5 text-sm font-semibold mb-6 border border-blue-200">
+          <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+          Plataforma Empresarial para Cartagena
+        </div>
+        <h1 class="text-5xl lg:text-7xl font-black text-slate-900 leading-tight mb-6">
+          Optimiza hoy,<br>
+          <span class="text-gradient">crece mañana.</span>
+        </h1>
+        <p class="text-xl text-slate-600 leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0">
+          AdminPro centraliza la gestión de tu microempresa o emprendimiento: nómina, inventario, chat corporativo, documentos y planeación inteligente. Todo en un solo lugar.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+          <a href="#modulos" id="hero-login-btn"
+             class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-2xl shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-200 text-lg">
+            Ver Módulos
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+            </svg>
+          </a>
+        </div>
+
+        <!-- Stats -->
+        <div class="flex gap-8 justify-center lg:justify-start mt-12">
+          <div class="text-center lg:text-left">
+            <div class="text-3xl font-black text-blue-600">6+</div>
+            <div class="text-sm text-slate-500 font-medium">Módulos</div>
+          </div>
+          <div class="w-px bg-slate-200"></div>
+          <div class="text-center lg:text-left">
+            <div class="text-3xl font-black text-blue-600">100%</div>
+            <div class="text-sm text-slate-500 font-medium">Web</div>
+          </div>
+          <div class="w-px bg-slate-200"></div>
+          <div class="text-center lg:text-left">
+            <div class="text-3xl font-black text-blue-600">100%</div>
+            <div class="text-sm text-slate-500 font-medium">Seguro</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visual card -->
+      <div class="flex-1 w-full max-w-lg lg:max-w-none">
+        <div class="relative">
+          <!-- Main card -->
+          <div class="glass rounded-3xl shadow-2xl shadow-blue-500/10 p-8 border border-white/60">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="flex gap-1.5">
+                <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                <div class="w-3 h-3 rounded-full bg-green-400"></div>
+              </div>
+              <div class="flex-1 bg-slate-100 rounded-lg h-6 flex items-center px-3">
+                <span class="text-xs text-slate-400">adminpro.local/dashboard</span>
+              </div>
+            </div>
+            <!-- Mini dashboard preview -->
+            <div class="space-y-3">
+              <div class="flex gap-3">
+                <div class="w-32 bg-blue-600 rounded-xl p-3 text-white">
+                  <div class="text-xs opacity-75 mb-1">Nómina</div>
+                  <div class="text-lg font-bold">$4.2M</div>
+                </div>
+                <div class="flex-1 bg-slate-100 rounded-xl p-3">
+                  <div class="text-xs text-slate-400 mb-1">Empleados</div>
+                  <div class="text-lg font-bold text-slate-700">12</div>
+                </div>
+                <div class="flex-1 bg-slate-100 rounded-xl p-3">
+                  <div class="text-xs text-slate-400 mb-1">Inventario</div>
+                  <div class="text-lg font-bold text-slate-700">248</div>
+                </div>
+              </div>
+              <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-semibold text-blue-700">Progreso del Mes</span>
+                  <span class="text-xs text-blue-600 font-bold">78%</span>
+                </div>
+                <div class="w-full bg-blue-200 rounded-full h-2">
+                  <div class="bg-blue-600 h-2 rounded-full" style="width: 78%"></div>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <div class="bg-green-50 rounded-lg p-2 text-center border border-green-100">
+                  <div class="text-green-600 text-xs font-semibold">Chat</div>
+                  <div class="text-green-500 text-lg">💬</div>
+                </div>
+                <div class="bg-purple-50 rounded-lg p-2 text-center border border-purple-100">
+                  <div class="text-purple-600 text-xs font-semibold">Docs</div>
+                  <div class="text-purple-500 text-lg">📄</div>
+                </div>
+                <div class="bg-orange-50 rounded-lg p-2 text-center border border-orange-100">
+                  <div class="text-orange-600 text-xs font-semibold">Plan</div>
+                  <div class="text-orange-500 text-lg">📅</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Floating badges -->
+          <div class="absolute -top-4 -right-4 glass rounded-2xl px-4 py-2 shadow-xl border border-white/60">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span class="text-xs font-semibold text-slate-700">Sistema activo</span>
+            </div>
+          </div>
+          <div class="absolute -bottom-4 -left-4 glass rounded-2xl px-4 py-2 shadow-xl border border-white/60">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🔒</span>
+              <span class="text-xs font-semibold text-slate-700">Seguridad garantizada</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MÓDULOS ===== -->
+  <section id="modulos" class="py-24 bg-white">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <div class="inline-flex items-center gap-2 bg-blue-100 text-blue-700 rounded-full px-4 py-1.5 text-sm font-semibold mb-4 border border-blue-200">
+          Plataforma Completa
+        </div>
+        <h2 class="text-4xl lg:text-5xl font-black text-slate-900 mb-4">Todo lo que necesitas</h2>
+        <p class="text-xl text-slate-600 max-w-2xl mx-auto">Módulos integrados para gestionar cada área de tu empresa desde un solo sistema.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- Card template -->
+        <div class="group p-6 rounded-2xl border border-slate-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer bg-white">
+          <div class="w-12 h-12 rounded-xl bg-blue-50 group-hover:bg-blue-100 flex items-center justify-center mb-4 transition-colors">
+            <svg class="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-slate-900 mb-2">Usuarios y Permisos</h3>
+          <p class="text-slate-500 text-sm leading-relaxed">Sistema de roles. Panel de switches de acceso por módulo.</p>
+        </div>
+
+        <div class="group p-6 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 cursor-pointer bg-white">
+          <div class="w-12 h-12 rounded-xl bg-indigo-50 group-hover:bg-indigo-100 flex items-center justify-center mb-4 transition-colors">
+            <svg class="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-slate-900 mb-2">Nómina Automática</h3>
+          <p class="text-slate-500 text-sm leading-relaxed">Plantilla para cálculos de devengados, deducidos y neto a pagar.</p>
+        </div>
+
+        <div class="group p-6 rounded-2xl border border-slate-100 hover:border-green-200 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300 cursor-pointer bg-white">
+          <div class="w-12 h-12 rounded-xl bg-green-50 group-hover:bg-green-100 flex items-center justify-center mb-4 transition-colors">
+            <svg class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-slate-900 mb-2">Chat Corporativo</h3>
+          <p class="text-slate-500 text-sm leading-relaxed">Mensajería 1 a 1 y grupal estilo WhatsApp Web con envío de archivos en tiempo real.</p>
+        </div>
+
+        <div class="group p-6 rounded-2xl border border-slate-100 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 cursor-pointer bg-white">
+          <div class="w-12 h-12 rounded-xl bg-purple-50 group-hover:bg-purple-100 flex items-center justify-center mb-4 transition-colors">
+            <svg class="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-slate-900 mb-2">Planeación Inteligente</h3>
+          <p class="text-slate-500 text-sm leading-relaxed">Tablero híbrido con calendario Drag &amp; Drop, metas, alertas de carga y sugerencias.</p>
+        </div>
+
+        <div class="group p-6 rounded-2xl border border-slate-100 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 cursor-pointer bg-white">
+          <div class="w-12 h-12 rounded-xl bg-orange-50 group-hover:bg-orange-100 flex items-center justify-center mb-4 transition-colors">
+            <svg class="w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-slate-900 mb-2">Inventario y Reportes</h3>
+          <p class="text-slate-500 text-sm leading-relaxed">Control de entradas/salidas y generación de reportes PDF con alertas de stock.</p>
+        </div>
+
+        <div class="group p-6 rounded-2xl border border-slate-100 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-500/10 transition-all duration-300 cursor-pointer bg-white">
+          <div class="w-12 h-12 rounded-xl bg-rose-50 group-hover:bg-rose-100 flex items-center justify-center mb-4 transition-colors">
+            <svg class="w-6 h-6 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-slate-900 mb-2">Gestor Documental</h3>
+          <p class="text-slate-500 text-sm leading-relaxed">Editor de actas (A4, Carta, Oficio) y repositorio virtual con carpetas y filtros.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== NOSOTROS / CTA ===== -->
+  <section id="nosotros" class="py-24 gradient-brand text-white relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10">
+      <div class="absolute top-0 left-0 w-72 h-72 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+      <div class="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-1/2 translate-y-1/2"></div>
+    </div>
+    <div class="relative z-10 max-w-4xl mx-auto px-6 text-center">
+      <h2 class="text-4xl lg:text-5xl font-black mb-6">Listo para transformar tu empresa</h2>
+      <p class="text-xl text-blue-100 mb-10 max-w-2xl mx-auto leading-relaxed">
+        AdminPro fue diseñado para las necesidades de las microempresas y emprendimientos de Cartagena. Gestiona todo tu negocio desde un solo sistema seguro y moderno.
+      </p>
+<!--      <a href="/login" id="cta-login-btn"-->
+<!--         class="inline-flex items-center gap-3 bg-white text-blue-700 font-bold px-10 py-5 rounded-2xl shadow-2xl hover:shadow-white/20 hover:-translate-y-1 transition-all duration-200 text-lg">-->
+<!--        Ingresar a AdminPro-->
+<!--        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">-->
+<!--          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>-->
+<!--        </svg>-->
+<!--      </a>-->
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="bg-slate-900 text-slate-400 py-10">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+		<div class="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-blue-500/30 group-hover:shadow-blue-500/50 transition-shadow">
+					  <img src="/images/logo.png" alt="AdminPro Logo" class="w-full h-full object-contain">
+					</div>
+		          <span class="text-xl font-bold text-gradient">AdminPro</span>
+      </div>
+      <p class="text-sm">© 2026 AdminPro. Plataforma empresarial para microempresas y emprendimientos en Cartagena.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Navbar scroll effect
+    window.addEventListener('scroll', () => {
+      const nav = document.getElementById('navbar');
+      if (window.scrollY > 20) {
+        nav.classList.add('shadow-lg');
+      } else {
+        nav.classList.remove('shadow-lg');
+      }
+    });
+  </script>
+</body>
+</html>

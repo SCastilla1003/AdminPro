@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/dashboard :: layout(
+        pageTitle    = ${manual.id == null ? 'Nuevo Manual de Funciones' : 'Editar Manual de Funciones'},
+        pageSubtitle = 'Complete todos los campos del manual de funciones del cargo',
+        activePage   = 'manual-funciones',
+        content      = ~{::mf-form}
+      )}">
+<head></head>
+<body>
+<div th:fragment="mf-form">
+
+  <!-- Back -->
+  <div class="flex items-center gap-3 mb-8">
+    <a href="/manual-funciones"
+       class="inline-flex items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+      Volver a la lista
+    </a>
+  </div>
+
+  <form th:action="@{/manual-funciones/guardar}" method="post" class="max-w-5xl mx-auto space-y-8">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+    <input type="hidden" name="id" th:value="${manual.id}">
+
+    <!-- ===== IDENTIFICACIÓN ===== -->
+    <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div class="bg-indigo-600 px-6 py-4">
+        <h2 class="text-white font-black text-sm uppercase tracking-widest flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+          Identificación del Cargo
+        </h2>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+
+        <div class="md:col-span-2">
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Denominación del Empleo *</label>
+          <input type="text" name="jobTitle" th:value="${manual.jobTitle}" required
+                 placeholder="Ej: Profesional Universitario"
+                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-400 outline-none transition-all text-slate-700 dark:text-white font-medium">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Nivel</label>
+          <select name="level" class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-400 outline-none transition-all text-slate-700 dark:text-white font-medium">
+            <option value="">— Seleccionar —</option>
+            <option th:value="Directivo"     th:selected="${manual.level == 'Directivo'}">Directivo</option>
+            <option th:value="Asesor"        th:selected="${manual.level == 'Asesor'}">Asesor</option>
+            <option th:value="Profesional"   th:selected="${manual.level == 'Profesional'}">Profesional</option>
+            <option th:value="Técnico"       th:selected="${manual.level == 'Técnico'}">Técnico</option>
+            <option th:value="Asistencial"   th:selected="${manual.level == 'Asistencial'}">Asistencial</option>
+            <option th:value="Operativo"     th:selected="${manual.level == 'Operativo'}">Operativo</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Código</label>
+          <input type="text" name="code" th:value="${manual.code}" placeholder="Ej: 2020"
+                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-400 outline-none transition-all text-slate-700 dark:text-white font-medium font-mono">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Grado</label>
+          <input type="text" name="grade" th:value="${manual.grade}" placeholder="Ej: 08"
+                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-400 outline-none transition-all text-slate-700 dark:text-white font-medium">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Número de Cargos</label>
+          <input type="text" name="numPositions" th:value="${manual.numPositions}" placeholder="Ej: 184 (Ciento ochenta y cuatro)"
+                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-400 outline-none transition-all text-slate-700 dark:text-white font-medium">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Regional</label>
+          <input type="text" name="regional" th:value="${manual.regional}" placeholder="Ej: Bolívar"
+                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-400 outline-none transition-all text-slate-700 dark:text-white font-medium">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Dependencia</label>
+          <input type="text" name="department" th:value="${manual.department}" placeholder="Ej: Centro de Comercio y Servicios"
+                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-400 outline-none transition-all text-slate-700 dark:text-white font-medium">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Cargo del Jefe Inmediato</label>
+          <input type="text" name="supervisorTitle" th:value="${manual.supervisorTitle}" placeholder="Ej: Quien ejerza la supervisión directa"
+                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-400 outline-none transition-all text-slate-700 dark:text-white font-medium">
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== ÁREA FUNCIONAL ===== -->
+    <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div class="bg-purple-600 px-6 py-4">
+        <h2 class="text-white font-black text-sm uppercase tracking-widest">Área Funcional</h2>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Área Funcional</label>
+          <input type="text" name="functionalArea" th:value="${manual.functionalArea}" placeholder="Ej: Centro de Formación Profesional"
+                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-purple-400 outline-none transition-all text-slate-700 dark:text-white font-medium">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Proceso</label>
+          <input type="text" name="process" th:value="${manual.process}" placeholder="Ej: Gestión de la Innovación y la Competitividad"
+                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-purple-400 outline-none transition-all text-slate-700 dark:text-white font-medium">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Programa</label>
+          <input type="text" name="program" th:value="${manual.program}" placeholder="Ej: SENNOVA"
+                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-purple-400 outline-none transition-all text-slate-700 dark:text-white font-medium">
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PROPÓSITO PRINCIPAL ===== -->
+    <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div class="bg-blue-600 px-6 py-4">
+        <h2 class="text-white font-black text-sm uppercase tracking-widest">Propósito Principal</h2>
+      </div>
+      <div class="p-6">
+        <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Descripción del propósito</label>
+        <textarea name="mainPurpose" rows="4" th:text="${manual.mainPurpose}"
+                  placeholder="Describa el propósito principal del cargo..."
+                  class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all resize-none text-slate-700 dark:text-white font-medium"></textarea>
+      </div>
+    </div>
+
+    <!-- ===== FUNCIONES ESENCIALES ===== -->
+    <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div class="bg-emerald-600 px-6 py-4">
+        <h2 class="text-white font-black text-sm uppercase tracking-widest">Funciones Esenciales</h2>
+      </div>
+      <div class="p-6">
+        <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
+          Lista de funciones (una por línea, serán numeradas automáticamente)
+        </label>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-3">Escriba cada función en una línea separada. Ejemplo:<br>Gestionar la implementación...<br>Articular las actividades...</p>
+        <textarea name="essentialFunctions" rows="10" th:text="${manual.essentialFunctions}"
+                  placeholder="Gestionar la implementación de las líneas programáticas...&#10;Articular las actividades de I+D+i...&#10;Controlar el desarrollo de los proyectos..."
+                  class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-400 outline-none transition-all resize-y text-slate-700 dark:text-white font-medium text-sm leading-relaxed"></textarea>
+      </div>
+    </div>
+
+    <!-- ===== CONOCIMIENTOS BÁSICOS ===== -->
+    <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div class="bg-amber-500 px-6 py-4">
+        <h2 class="text-white font-black text-sm uppercase tracking-widest">Conocimientos Básicos o Esenciales</h2>
+      </div>
+      <div class="p-6">
+        <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+          Uno por línea
+        </label>
+        <textarea name="basicKnowledge" rows="6" th:text="${manual.basicKnowledge}"
+                  placeholder="Marco normativo sobre ciencia, tecnología e innovación&#10;Políticas públicas en ciencia, tecnología e innovación&#10;Propiedad intelectual"
+                  class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-amber-400 outline-none transition-all resize-y text-slate-700 dark:text-white font-medium text-sm leading-relaxed"></textarea>
+      </div>
+    </div>
+
+    <!-- ===== COMPETENCIAS ===== -->
+    <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div class="bg-purple-700 px-6 py-4">
+        <h2 class="text-white font-black text-sm uppercase tracking-widest">Competencias</h2>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+            Comportamentales Comunes <span class="text-slate-300 dark:text-slate-500 normal-case font-normal">(una por línea)</span>
+          </label>
+          <textarea name="commonCompetencies" rows="7" th:text="${manual.commonCompetencies}"
+                    placeholder="Aprendizaje continuo&#10;Orientación a resultados&#10;Orientación al usuario&#10;Compromiso con la organización&#10;Trabajo en equipo&#10;Adaptación al cambio"
+                    class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-purple-400 outline-none transition-all resize-y text-slate-700 dark:text-white font-medium text-sm"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+            Nivel Jerárquico Profesional <span class="text-slate-300 dark:text-slate-500 normal-case font-normal">(una por línea)</span>
+          </label>
+          <textarea name="hierarchicalCompetencies" rows="7" th:text="${manual.hierarchicalCompetencies}"
+                    placeholder="Aporte técnico-profesional&#10;Comunicación efectiva&#10;Gestión de procedimientos&#10;Instrumentación de decisiones"
+                    class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-400 outline-none transition-all resize-y text-slate-700 dark:text-white font-medium text-sm"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== REQUISITOS ACADÉMICOS ===== -->
+    <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div class="bg-rose-600 px-6 py-4">
+        <h2 class="text-white font-black text-sm uppercase tracking-widest">Requisitos de Formación Académica y Experiencia</h2>
+      </div>
+      <div class="p-6">
+        <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+          Descripción de alternativas de estudio y experiencia
+        </label>
+        <textarea name="academicRequirements" rows="8" th:text="${manual.academicRequirements}"
+                  placeholder="Alternativa 1&#10;Estudios: Título Profesional Universitario y Título de Postgrado en Nivel de Maestría...&#10;Experiencia: Quince (15) meses de experiencia profesional relacionada con...&#10;&#10;Alternativa 2&#10;Estudios: Título Profesional Universitario y Título de Postgrado en Nivel de Especialización...&#10;Experiencia: Veintisiete (27) meses de experiencia relacionada..."
+                  class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-rose-400 outline-none transition-all resize-y text-slate-700 dark:text-white font-medium text-sm leading-relaxed"></textarea>
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex items-center justify-end gap-4 pb-6">
+      <a href="/manual-funciones"
+         class="px-6 py-3 font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-2xl transition-colors">
+        Cancelar
+      </a>
+      <button type="submit"
+              class="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-10 py-3 rounded-2xl shadow-lg shadow-indigo-500/25 transition-all hover:scale-105 flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        Guardar Manual
+      </button>
+    </div>
+
+  </form>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/dashboard :: layout(
+        pageTitle    = ${pageTitle},
+        pageSubtitle = ${pageSubtitle},
+        activePage   = 'usuarios',
+        content      = ~{::main-content}
+      )}">
+<head></head>
+<body>
+<th:block th:fragment="main-content">
+
+  <div class="max-w-xl mx-auto">
+
+    <!-- Back -->
+    <a href="/usuarios" class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 mb-6 transition-colors">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Volver a Usuarios y Roles
+    </a>
+
+    <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+
+      <!-- Header -->
+      <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white" th:text="${pageTitle}">Rol</h2>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1" th:text="${pageSubtitle}">Subtítulo</p>
+      </div>
+
+      <!-- Form -->
+      <form th:action="@{/usuarios/roles/guardar}" method="post" class="p-8 space-y-6">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <input type="hidden" name="id" th:if="${role.id != null}" th:value="${role.id}">
+
+        <!-- Nombre -->
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Nombre del Rol</label>
+          <input type="text" name="name"
+                 th:value="${role.id != null ? role.name : ''}"
+                 required
+                 placeholder="Ej: CONTADOR, GERENTE..."
+                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all font-medium text-slate-700 dark:text-white uppercase">
+          <p class="text-[11px] text-slate-400 mt-1.5">El prefijo <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">ROLE_</code> se añadirá automáticamente si no lo escribes.</p>
+        </div>
+
+        <!-- Descripción -->
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Descripción</label>
+          <input type="text" name="description"
+                 th:value="${role.description}"
+                 required
+                 placeholder="Ej: Acceso al módulo de nómina y reportes"
+                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all font-medium text-slate-700 dark:text-white">
+        </div>
+
+        <!-- Permisos con toggle switches -->
+        <div>
+          <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Permisos de Acceso</label>
+          <div class="grid grid-cols-2 gap-3">
+
+            <th:block th:each="perm : ${allPerms}">
+              <!-- Hidden input que el JS actualiza al hacer toggle -->
+              <input type="hidden"
+                     th:id="'hid_' + ${perm}"
+                     name="perms"
+                     th:value="${role.permissions != null and role.permissions.contains(perm) ? perm : ''}">
+
+              <div class="flex items-center justify-between gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all">
+                <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  <th:block th:switch="${perm}">
+                    <span th:case="'PERM_DASHBOARD'">Dashboard</span>
+                    <span th:case="'PERM_PAYROLL'">Nómina</span>
+                    <span th:case="'PERM_USERS'">Gestión Usuarios</span>
+                    <span th:case="'PERM_CHAT'">Chat Corporativo</span>
+                    <span th:case="'PERM_INVENTORY'">Inventario</span>
+                    <span th:case="'PERM_PLANNING'">Planeación</span>
+                    <span th:case="'PERM_ATTENDANCE'">Control de Asistencia</span>
+                    <span th:case="*" th:text="${perm}">Permiso</span>
+                  </th:block>
+                </span>
+                <!-- Toggle -->
+                <div th:attr="id='trk_' + ${perm}, data-perm=${perm}, data-on=${role.permissions != null and role.permissions.contains(perm)}"
+                     onclick="togglePerm(this)"
+                     style="position:relative;width:40px;height:22px;border-radius:11px;cursor:pointer;transition:background-color 0.2s ease;flex-shrink:0;"
+                     th:style="${role.permissions != null and role.permissions.contains(perm)}
+                       ? 'position:relative;width:40px;height:22px;border-radius:11px;cursor:pointer;transition:background-color 0.2s ease;flex-shrink:0;background-color:#2563eb;'
+                       : 'position:relative;width:40px;height:22px;border-radius:11px;cursor:pointer;transition:background-color 0.2s ease;flex-shrink:0;background-color:#94a3b8;'">
+                  <div style="position:absolute;top:2px;width:18px;height:18px;background:white;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:left 0.2s ease;"
+                       th:style="${role.permissions != null and role.permissions.contains(perm)}
+                         ? 'position:absolute;top:2px;left:20px;width:18px;height:18px;background:white;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:left 0.2s ease;'
+                         : 'position:absolute;top:2px;left:2px;width:18px;height:18px;background:white;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:left 0.2s ease;'">
+                  </div>
+                </div>
+              </div>
+            </th:block>
+
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700">
+          <a href="/usuarios" class="px-5 py-2.5 font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors text-sm">
+            Cancelar
+          </a>
+          <button type="submit"
+                  class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-2.5 rounded-xl shadow-lg shadow-blue-500/20 hover:scale-105 transition-all text-sm">
+            <span th:text="${role.id != null ? 'Guardar Cambios' : 'Crear Rol'}">Guardar</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function togglePerm(track) {
+      var perm  = track.dataset.perm;
+      var isOn  = track.dataset.on === 'true';
+      isOn = !isOn;
+      track.dataset.on              = String(isOn);
+      track.style.backgroundColor   = isOn ? '#2563eb' : '#94a3b8';
+      track.firstElementChild.style.left = isOn ? '20px' : '2px';
+      var hidden = document.getElementById('hid_' + perm);
+      if (hidden) hidden.value = isOn ? perm : '';
+    }
+  </script>
+
+</th:block>
+</body>
+</html>

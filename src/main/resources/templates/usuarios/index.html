@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/dashboard :: layout(
+        pageTitle    = 'Usuarios y Roles',
+        pageSubtitle = 'Gestión de usuarios y permisos del sistema',
+        activePage   = 'usuarios',
+        content      = ~{::main-content}
+      )}">
+<head></head>
+<body>
+<th:block th:fragment="main-content">
+<div x-data="{ 
+       selectedRole: 'ALL', 
+       selectedRoleObj: null,
+       showRoleModal: false,
+       editingRole: {id: null, name: '', description: '', perms: []}
+}"
+     @open-role-modal.window="editingRole = $event.detail; showRoleModal = true">
+  <!-- Header row -->
+  <div class="flex items-center justify-between mb-6">
+    <div></div>
+    <a href="/usuarios/nuevo" id="btn-nuevo-usuario"
+       class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-blue-500/30 hover:scale-105 transition-all text-sm">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Nuevo Usuario
+    </a>
+  </div>
+
+  <!-- Flash message -->
+  <div th:if="${successMsg}" class="mb-5 flex items-center gap-3 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 text-green-700 dark:text-green-400 rounded-xl px-4 py-3 text-sm animate-pulse">
+    <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+    </svg>
+    <span th:text="${successMsg}">Operación exitosa.</span>
+  </div>
+
+  <div th:if="${errorMsg}" class="mb-5 flex items-center gap-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-xl px-4 py-3 text-sm">
+    <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v4a1 1 0 002 0V7zm-1 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+    </svg>
+    <span th:text="${errorMsg}">Error de operación.</span>
+  </div>
+
+  <!-- Two-column layout: Roles list + Users table (Discord Style) -->
+  <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+
+    <!-- LEFT: Roles panel (Discord style) -->
+    <div class="xl:col-span-1">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col h-full">
+        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+          <div>
+            <h2 class="font-bold text-slate-900 dark:text-white text-sm">Roles del Sistema</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Niveles de acceso y permisos</p>
+          </div>
+          <a href="/usuarios/roles/nuevo" class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          </a>
+        </div>
+        
+        <div class="p-3 space-y-1 flex-1">
+          <!-- All Roles -->
+          <div @click="selectedRole = 'ALL'; selectedRoleObj = null"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer"
+               :class="selectedRole === 'ALL' ? 'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-100 dark:ring-blue-500/30' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50'">
+            <div class="w-2.5 h-2.5 rounded-full bg-slate-400"></div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-semibold text-slate-700 dark:text-slate-300">Todos los Usuarios</div>
+            </div>
+            <span class="text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full" th:text="${users.size()}">0</span>
+          </div>
+
+          <!-- Dynamic Roles -->
+          <div th:each="role : ${roles}" class="rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-600 transition-all">
+            <!-- Row principal -->
+            <div class="flex items-center gap-2 px-3 py-2.5 cursor-pointer rounded-xl"
+                 :class="selectedRole === '[[${role.name}]]' ? 'bg-blue-50 dark:bg-blue-900/30' : ''"
+                 @click="selectedRole = '[[${role.name}]]'; selectedRoleObj = { id: [[${role.id}]], name: '[[${#strings.escapeJavaScript(role.name)}]]', description: '[[${#strings.escapeJavaScript(role.description != null ? role.description : '')}]]', perms: '[[${#strings.listJoin(role.permissions, ',')}]]'.split(',').filter(Boolean) }">
+              <div class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                   th:classappend="${role.name == 'ROLE_ADMIN'} ? 'bg-indigo-500' : 'bg-emerald-500'"></div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-semibold text-slate-700 dark:text-slate-300 truncate"
+                     th:text="${#strings.replace(role.name, 'ROLE_', '')}">Rol</div>
+                <div class="text-xs text-slate-400 truncate" th:text="${role.description}">Desc</div>
+              </div>
+            </div>
+            <!-- Botones Editar / Eliminar siempre visibles -->
+            <div class="flex items-center gap-1 px-3 pb-2 -mt-1">
+              <!-- Editar -->
+              <a th:href="@{/usuarios/roles/editar/{id}(id=${role.id})}"
+                 class="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-1 rounded-lg transition-colors">
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                Editar
+              </a>
+              <!-- Eliminar (solo si no es ROLE_ADMIN) -->
+              <form th:if="${role.name != 'ROLE_ADMIN'}"
+                    th:action="@{/usuarios/roles/eliminar/{id}(id=${role.id})}" method="post"
+                    onsubmit="return confirm('¿Eliminar este rol?')">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit"
+                        class="flex items-center gap-1 text-xs font-semibold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 px-2 py-1 rounded-lg transition-colors">
+                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  Eliminar
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Permisos por rol (dinámicos) -->
+        <div class="px-5 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+          <h3 class="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-widest mb-4">
+              Accesos de <span x-text="selectedRoleObj ? selectedRoleObj.name.replace('ROLE_', '') : 'Todos'"></span>
+          </h3>
+          <div class="space-y-3" x-show="selectedRoleObj">
+            <template x-for="p in [
+                { id: 'PERM_DASHBOARD', name: 'Dashboard General' },
+                { id: 'PERM_PAYROLL', name: 'Módulo Nómina' },
+                { id: 'PERM_USERS', name: 'Gestión Usuarios' },
+                { id: 'PERM_CHAT', name: 'Chat Corporativo' },
+                { id: 'PERM_INVENTORY', name: 'Inventario' },
+                { id: 'PERM_PLANNING', name: 'Planeación' }
+            ]" :key="p.id">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-medium text-slate-600 dark:text-slate-400" x-text="p.name"></span>
+                  <div class="w-8 h-4 rounded-full flex items-center px-0.5 transition-colors duration-300"
+                       :class="selectedRoleObj.perms.includes(p.id) ? 'bg-blue-500 justify-end' : 'bg-slate-300 dark:bg-slate-600 justify-start'">
+                    <div class="w-3 h-3 bg-white rounded-full shadow-sm"></div>
+                  </div>
+                </div>
+            </template>
+          </div>
+          <div x-show="!selectedRoleObj" class="text-xs text-slate-400 text-center py-2">
+              Seleccione un rol para ver sus permisos reales.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Users table -->
+    <div class="xl:col-span-3">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden h-full flex flex-col">
+        <div class="px-6 py-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+          <div>
+            <h2 class="font-bold text-slate-900 dark:text-white text-lg tracking-tight">Directorio de Usuarios</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"
+               th:text="${users.size()} + ' usuario(s) en total'">0 usuarios</p>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div th:if="${users.empty}" class="py-16 text-center flex-1">
+          <svg class="w-12 h-12 text-slate-200 dark:text-slate-600 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <p class="text-slate-400 font-medium">No hay usuarios registrados.</p>
+        </div>
+
+        <!-- Table -->
+        <div th:if="${!users.empty}" class="overflow-x-auto flex-1">
+          <table class="w-full">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
+                <th class="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-4">Usuario</th>
+                <th class="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-4">Correo</th>
+                <th class="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-4">Rol Principal</th>
+                <th class="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-4">Estado</th>
+                <th class="text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-4">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+              
+              <!-- Alpine Filtering Row -->
+              <tr th:each="user : ${users}" 
+                  class="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors"
+                  th:data-roles="${#strings.listJoin(user.roles.![name], ',')}"
+                  x-show="selectedRole === 'ALL' || $el.dataset.roles.includes(selectedRole)">
+                
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 overflow-hidden shadow-sm">
+                      <img th:if="${user.profilePhoto != null}" th:src="@{'/uploads/' + ${user.profilePhoto}}"
+                           class="w-full h-full object-cover" alt="foto">
+                      <span th:if="${user.profilePhoto == null}"
+                            th:text="${#strings.substring(user.fullName != null ? user.fullName : user.username, 0, 1).toUpperCase()}">U</span>
+                    </div>
+                    <div>
+                      <div class="font-bold text-slate-900 dark:text-white text-sm" th:text="${user.fullName != null ? user.fullName : user.username}">Nombre</div>
+                      <div class="text-xs text-slate-500 dark:text-slate-400" th:text="'@' + ${user.username}">@usuario</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400" th:text="${user.email}">email@...</td>
+                <td class="px-6 py-4">
+                  <div class="flex flex-wrap gap-2">
+                    <span th:each="role : ${user.roles}"
+                          th:text="${role.name == 'ROLE_ADMIN'} ? 'Administrador' : 'Usuario'"
+                          th:classappend="${role.name == 'ROLE_ADMIN'} ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600'"
+                          class="inline-block text-xs font-bold px-3 py-1 rounded-full shadow-sm">Rol</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <span th:if="${user.enabled}" class="inline-flex items-center gap-1.5 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 text-xs font-bold px-3 py-1 rounded-full border border-green-200 dark:border-green-500/20 shadow-sm">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>Activo
+                  </span>
+                  <span th:if="${!user.enabled}" class="inline-flex items-center gap-1.5 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-xs font-bold px-3 py-1 rounded-full border border-red-200 dark:border-red-500/20 shadow-sm">
+                    <span class="w-2 h-2 bg-red-500 rounded-full"></span>Inactivo
+                  </span>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center justify-end gap-2">
+                    <a th:href="@{/usuarios/editar/{id}(id=${user.id})}"
+                       class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:border-blue-200 dark:hover:border-blue-500/30 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all shadow-sm">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                    </a>
+                    <form th:action="@{/usuarios/eliminar/{id}(id=${user.id})}" method="post"
+                          onsubmit="return confirm('¿Estás seguro de que deseas eliminar permanentemente a este usuario?');">
+                      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                      <button type="submit"
+                              class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-200 dark:hover:border-red-500/30 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-all shadow-sm">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Role Modal -->
+  <div x-show="showRoleModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-cloak>
+    <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-700" @click.away="showRoleModal = false">
+      <form th:action="@{/usuarios/roles/guardar}" method="post" class="p-8 space-y-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white" x-text="editingRole.id ? 'Editar Rol' : 'Crear Nuevo Rol'"></h3>
+            <button type="button" @click="showRoleModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        </div>
+        <input type="hidden" name="id" :value="editingRole.id" :disabled="!editingRole.id">
+        <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+        
+        <div>
+            <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Nombre del Rol</label>
+            <input type="text" name="name" x-model="editingRole.name" required class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all font-medium text-slate-700 dark:text-white uppercase">
+            <p class="text-[10px] text-slate-400 mt-1">El prefijo ROLE_ se agregará automáticamente.</p>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Descripción</label>
+            <input type="text" name="description" x-model="editingRole.description" required class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all font-medium text-slate-700 dark:text-white">
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Permisos de Acceso</label>
+            <div class="grid grid-cols-2 gap-3">
+                <template x-for="p in [
+                    { id: 'PERM_DASHBOARD', name: 'Dashboard' },
+                    { id: 'PERM_PAYROLL', name: 'Nómina' },
+                    { id: 'PERM_USERS', name: 'Usuarios' },
+                    { id: 'PERM_CHAT', name: 'Chat' },
+                    { id: 'PERM_INVENTORY', name: 'Inventario' },
+                    { id: 'PERM_PLANNING', name: 'Planeación' }
+                ]" :key="p.id">
+                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-xl border border-slate-100 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/50">
+                        <input type="checkbox" name="perms" :value="p.id" class="w-4 h-4 text-blue-600 rounded" :checked="editingRole.perms.includes(p.id)">
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-300" x-text="p.name"></span>
+                    </label>
+                </template>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-slate-700">
+            <div>
+                <!-- Opcional: botón eliminar para roles existentes no admin -->
+            </div>
+            <div class="flex gap-2">
+                <button type="button" @click="showRoleModal = false" class="px-5 py-2 font-bold text-slate-500 hover:bg-slate-50 rounded-xl transition-colors">Cancelar</button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-xl shadow-lg shadow-blue-500/20 transition-all">Guardar Rol</button>
+            </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+</th:block>
+
+<script>
+function openEditRole(id, name, description, permsStr) {
+    const perms = permsStr ? permsStr.split(',').filter(Boolean) : [];
+    window.dispatchEvent(new CustomEvent('open-role-modal', {
+        detail: { id: id, name: name, description: description, perms: perms }
+    }));
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard :: layout(
+        pageTitle    = 'Historial de Actividad',
+        pageSubtitle = 'Registro completo de acciones del sistema',
+        activePage   = 'dashboard',
+        content      = ~{::main-content}
+      )}">
+<head></head>
+<body>
+<th:block th:fragment="main-content">
+
+  <div class="max-w-4xl mx-auto">
+    <!-- Back Button -->
+    <a href="/dashboard" class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 mb-6 transition-colors">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Volver al Dashboard
+    </a>
+
+    <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+      <!-- Header -->
+      <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900 dark:text-white">Registro de Actividad</h2>
+          <p class="text-slate-500 text-sm mt-1">Todas las acciones realizadas en la plataforma</p>
+        </div>
+        <div class="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-4 py-2 rounded-xl text-xs font-bold">
+           Administrador
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="bg-slate-50 dark:bg-slate-900/50">
+              <th class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fecha y Hora</th>
+              <th class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Módulo</th>
+              <th class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Acción</th>
+              <th class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Descripción</th>
+              <th class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Realizado por</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+            <tr th:each="log : ${allLogs}" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+              <td class="px-8 py-4 text-sm text-slate-600 dark:text-slate-400 font-medium" 
+                  th:text="${#temporals.format(log.createdAt, 'dd/MM/yyyy HH:mm:ss')}">01/01/2026</td>
+              <td class="px-8 py-4">
+                <span th:class="'px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ' + 
+                            (${log.module == 'USERS' or log.module == 'ROLES'} ? 'bg-blue-50 text-blue-600 border border-blue-100' : 
+                            (${log.module == 'INVENTORY'} ? 'bg-orange-50 text-orange-600 border border-orange-100' : 
+                            (${log.module == 'PAYROLL'} ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 
+                            'bg-emerald-50 text-emerald-600 border border-emerald-100')))"
+                      th:text="${log.module}">USERS</span>
+              </td>
+              <td class="px-8 py-4 text-sm font-bold" 
+                  th:classappend="${log.action == 'DELETE' ? 'text-red-500' : (log.action == 'CREATE' ? 'text-green-500' : 'text-blue-500')}"
+                  th:text="${log.action}">CREATE</td>
+              <td class="px-8 py-4 text-sm text-slate-700 dark:text-slate-300 font-medium" th:text="${log.description}">Descripción del evento</td>
+              <td class="px-8 py-4">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-400"
+                       th:text="${#strings.substring(log.performedBy,0,1).toUpperCase()}">U</div>
+                  <span class="text-sm font-semibold text-slate-700 dark:text-slate-300" th:text="${log.performedBy}">usuario</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div th:if="${#lists.isEmpty(allLogs)}" class="p-20 text-center">
+        <p class="text-slate-400">No hay registros en el historial.</p>
+      </div>
+    </div>
+  </div>
+
+</th:block>
+</body>
+</html>

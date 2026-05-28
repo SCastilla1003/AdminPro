@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="layout(pageTitle, pageSubtitle, activePage, content)"
+      x-data="{ darkMode: localStorage.getItem('darkMode') === 'true', sidebarOpen: false }"
+      x-init="$watch('darkMode', val => localStorage.setItem('darkMode', val))"
+      :class="{ 'dark': darkMode }">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${pageTitle != null ? pageTitle + ' — AdminPro' : 'Dashboard — AdminPro'}">Dashboard — AdminPro</title>
+  
+  <!-- CSRF Tokens for JS -->
+  <meta th:name="_csrf" th:content="${_csrf.token}"/>
+  <meta th:name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/output.css">
+  <!-- Alpine.js & Flowbite -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 font-sans antialiased flex h-screen overflow-hidden text-slate-900 dark:text-slate-100 transition-colors duration-300">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside id="sidebar" 
+         class="bg-slate-900 dark:bg-slate-950 text-white flex flex-col flex-shrink-0 h-full transition-all duration-300 w-64">
+
+    <!-- Brand -->
+    <div class="px-6 py-5 border-b border-slate-800 dark:border-slate-800/50 flex items-center justify-between gap-3">
+		<a href="/dashboard" class="flex items-center gap-3 group">
+			<div class="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-blue-500/30 group-hover:shadow-blue-500/50 group-hover:scale-105 transition-all">
+			  <img src="/images/logo.png" alt="AdminPro Logo" class="w-full h-full object-contain">
+			</div>
+			<span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">AdminPro</span>
+		</a> 
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto custom-scrollbar">
+
+      <div class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-widest">Principal</div>
+
+      <a href="/dashboard" id="nav-dashboard"
+         th:classappend="${activePage == 'dashboard'} ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800 hover:translate-x-1'"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
+        Dashboard
+      </a>
+
+      <div class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-widest mt-4">Gestión</div>
+
+      <a sec:authorize="hasAnyAuthority('ROLE_ADMIN','PERM_USERS')" href="/usuarios" id="nav-usuarios"
+         th:classappend="${activePage == 'usuarios'} ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800 hover:translate-x-1'"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        Usuarios y Roles
+      </a>
+
+      <a sec:authorize="hasAnyAuthority('ROLE_ADMIN','PERM_PAYROLL')" href="/nomina" id="nav-nomina"
+         th:classappend="${activePage == 'nomina'} ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800 hover:translate-x-1'"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        Nómina
+      </a>
+
+      <a sec:authorize="hasAnyAuthority('ROLE_ADMIN','PERM_INVENTORY')" href="/inventario" id="nav-inventario"
+         th:classappend="${activePage == 'inventario'} ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800 hover:translate-x-1'"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+        </svg>
+        Inventario
+      </a>
+
+      <a sec:authorize="hasAnyAuthority('ROLE_ADMIN','PERM_PLANNING')" href="/planeacion" id="nav-planeacion"
+         th:classappend="${activePage == 'planeacion'} ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800 hover:translate-x-1'"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        Planeación
+      </a>
+
+      <div class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-widest mt-4">Comunicación</div>
+
+      <a sec:authorize="hasAnyAuthority('ROLE_ADMIN','PERM_CHAT')" href="/chat" id="nav-chat"
+         th:classappend="${activePage == 'chat'} ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800 hover:translate-x-1'"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        </svg>
+        Chat Corporativo
+      </a>
+
+      <a href="/documentos" id="nav-documentos"
+         th:classappend="${activePage == 'documentos'} ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800 hover:translate-x-1'"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Gestor Documental
+      </a>
+
+      <a sec:authorize="hasAnyAuthority('ROLE_ADMIN','PERM_MANUAL')" href="/manual-funciones" id="nav-manual-funciones"
+         th:classappend="${activePage == 'manual-funciones'} ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800 hover:translate-x-1'"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+        </svg>
+        Manual de Funciones
+      </a>
+
+      <div class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-widest mt-4">Organización</div>
+
+      <a href="/organigrama" id="nav-organigrama"
+         th:classappend="${activePage == 'organigrama'} ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800 hover:translate-x-1'"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+        </svg>
+        Organigrama
+      </a>
+
+      <!-- RRHH -->
+      <div sec:authorize="hasAnyAuthority('ROLE_ADMIN','PERM_ATTENDANCE')" class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-widest mt-4">RRHH</div>
+
+      <a sec:authorize="hasAnyAuthority('ROLE_ADMIN','PERM_ATTENDANCE')" href="/asistencia" id="nav-asistencia"
+         th:classappend="${activePage == 'asistencia'} ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800 hover:translate-x-1'"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+        </svg>
+        Control de Asistencia
+      </a>
+
+      <div sec:authorize="hasAuthority('ROLE_ADMIN')" class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-widest mt-4">Sistema</div>
+
+      <a sec:authorize="hasAuthority('ROLE_ADMIN')" href="/configuracion" id="nav-configuracion"
+         th:classappend="${activePage == 'configuracion'} ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-300 hover:text-white hover:bg-slate-800 hover:translate-x-1'"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        Configuración
+      </a>
+
+
+
+    </nav>
+  </aside>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+    <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between flex-shrink-0 z-10 sticky top-0 transition-colors duration-300">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight" th:text="${pageTitle != null ? pageTitle : 'Dashboard'}">Dashboard</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400" th:text="${pageSubtitle != null ? pageSubtitle : 'Panel de control'}">Panel de control</p>
+      </div>
+      <div class="flex items-center gap-4">
+        
+        <!-- Dark Mode Toggle -->
+        <button @click="darkMode = !darkMode" class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all hover:scale-105 active:scale-95">
+          <svg x-show="!darkMode" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+          </svg>
+          <svg x-show="darkMode" style="display: none;" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+        </button>
+
+        <!-- Notifications -->
+        <div class="relative" x-data="notificationApp()" x-init="init()">
+          <button @click="open = !open; if(open) fetchNotifications()" class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all hover:scale-105 active:scale-95">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            <span x-show="unreadCount > 0" x-text="unreadCount" class="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse"></span>
+          </button>
+
+          <div x-show="open" @click.away="open = false" style="display: none;" x-transition.opacity.duration.200ms class="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-50">
+            <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <p class="text-sm font-bold text-slate-900 dark:text-white">Notificaciones</p>
+              <button x-show="unreadCount > 0" @click="markAllRead()" class="text-[10px] font-bold text-blue-600 hover:text-blue-700">Marcar todo leído</button>
+            </div>
+            <div class="max-h-64 overflow-y-auto">
+              <template x-if="notifications.length === 0">
+                <div class="px-4 py-6 text-sm text-slate-400 text-center">No tienes notificaciones nuevas.</div>
+              </template>
+              <template x-for="n in notifications" :key="n.id">
+                <div @click="markRead(n)" class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors border-b border-slate-50 dark:border-slate-700/50 last:border-0"
+                     :class="!n.isRead ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''">
+                  <p class="text-sm text-slate-700 dark:text-slate-300 font-medium" x-text="n.message"></p>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                          :class="n.type === 'ATTENDANCE' ? 'bg-teal-100 text-teal-700' : (n.type === 'PAYROLL' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600')"
+                          x-text="n.type === 'ATTENDANCE' ? 'Asistencia' : (n.type === 'PAYROLL' ? 'Nómina' : (n.type === 'SYSTEM' ? 'Sistema' : 'Chat'))"></span>
+                    <span class="text-[10px] text-slate-400" x-text="formatTime(n.createdAt)"></span>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+          </div>
+        </div>
+
+        <!-- Avatar Dropdown -->
+        <div class="relative" x-data="{ open: false }">
+          <button @click="open = !open" @click.away="open = false" id="topbar-avatar-btn" class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-md shadow-blue-500/30 hover:ring-2 hover:ring-blue-400 hover:ring-offset-2 dark:hover:ring-offset-slate-900 transition-all hover:scale-105">
+            <span sec:authentication="name">A</span>
+          </button>
+          
+          <!-- Dropdown Profile -->
+          <div x-show="open" style="display: none;" x-transition.opacity.duration.200ms class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-50">
+            <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+              <p class="text-sm font-bold text-slate-900 dark:text-white truncate" sec:authentication="name">Usuario</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Gestión de Cuenta</p>
+            </div>
+            <div class="py-1">
+              <a href="/perfil" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                Mi Perfil
+              </a>
+              <a href="/configuracion" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Configuración
+              </a>
+            </div>
+            <div class="border-t border-slate-100 dark:border-slate-700 py-1 mt-1">
+              <form th:action="@{/logout}" method="post" class="block">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                  Cerrar Sesión
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </header>
+    <main class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+      <th:block th:replace="${content}"/>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+  <script>
+    function notificationApp() {
+      return {
+        open: false,
+        notifications: [],
+        unreadCount: 0,
+        stompClient: null,
+
+        init() {
+          this.fetchUnreadCount();
+          this.connectWebSocket();
+        },
+
+        connectWebSocket() {
+          const socket = new SockJS('/ws-chat');
+          this.stompClient = Stomp.over(socket);
+          this.stompClient.debug = null;
+          this.stompClient.connect({}, () => {
+            this.stompClient.subscribe('/user/queue/notifications', (payload) => {
+              const data = JSON.parse(payload.body);
+              this.unreadCount = data.count;
+              this.notifications.unshift(data.notification);
+              if (this.notifications.length > 20) this.notifications.pop();
+            });
+          });
+        },
+
+        fetchUnreadCount() {
+          fetch('/notificaciones/unread-count')
+            .then(r => r.json())
+            .then(data => { this.unreadCount = data.count; });
+        },
+
+        fetchNotifications() {
+          fetch('/notificaciones')
+            .then(r => r.json())
+            .then(data => {
+              this.notifications = data.notifications;
+              this.unreadCount = data.unreadCount;
+            });
+        },
+
+        markRead(n) {
+          if (!n.isRead) {
+            fetch('/notificaciones/' + n.id + '/leer', { method: 'POST' });
+            n.isRead = true;
+            this.unreadCount = Math.max(0, this.unreadCount - 1);
+          }
+          if (n.link) window.location.href = n.link;
+        },
+
+        markAllRead() {
+          fetch('/notificaciones/leer-todas', { method: 'POST' });
+          this.notifications.forEach(n => n.isRead = true);
+          this.unreadCount = 0;
+        },
+
+        formatTime(timestamp) {
+          const d = new Date(timestamp);
+          const now = new Date();
+          const diff = Math.floor((now - d) / 1000);
+          if (diff < 60) return 'Ahora';
+          if (diff < 3600) return Math.floor(diff / 60) + ' min';
+          if (diff < 86400) return Math.floor(diff / 3600) + ' h';
+          return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+        }
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/dashboard :: layout(
+        pageTitle    = 'Planeación Inteligente',
+        pageSubtitle = 'Gestiona eventos y tareas del equipo con Drag & Drop',
+        activePage   = 'planeacion',
+        content      = ~{::planeacion-main}
+      )}">
+<head></head>
+<body>
+<div th:fragment="planeacion-main">
+
+    <!-- Calendar Logic -->
+    <script th:inline="javascript">
+        function calendarApp() {
+            return {
+                month: 0,
+                year: 0,
+                monthName: '',
+                daysInMonth: [],
+                blankDays: [],
+                dayNames: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
+                monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                events: [],
+                view: 'kanban', // Default to Kanban to show drag&drop
+                showModal: false,
+                editingEventId: null,
+                modalEvent: {
+                    title: '',
+                    category: 'Tarea',
+                    color: 'blue',
+                    status: 'TODO',
+                    startDate: '',
+                    endDate: '',
+                    description: ''
+                },
+
+                async init() {
+                    let today = new Date();
+                    this.month = today.getMonth();
+                    this.year = today.getFullYear();
+                    this.getDays();
+                    await this.loadEvents();
+                },
+
+                async loadEvents() {
+                    try {
+                        const response = await fetch('/planeacion/api/eventos');
+                        if (response.ok) {
+                            this.events = await response.json();
+                        }
+                    } catch (e) {
+                        console.error("Error loading events", e);
+                    }
+                },
+
+                getDays() {
+                    let daysInMonthCount = new Date(this.year, this.month + 1, 0).getDate();
+                    let firstDayOfMonth = new Date(this.year, this.month, 1).getDay();
+                    
+                    this.blankDays = Array.from({ length: firstDayOfMonth }, (_, i) => i);
+                    this.daysInMonth = Array.from({ length: daysInMonthCount }, (_, i) => i + 1);
+                    this.monthName = this.monthNames[this.month];
+                },
+
+                previousMonth() {
+                    if (this.month === 0) {
+                        this.month = 11;
+                        this.year--;
+                    } else {
+                        this.month--;
+                    }
+                    this.getDays();
+                },
+
+                nextMonth() {
+                    if (this.month === 11) {
+                        this.month = 0;
+                        this.year++;
+                    } else {
+                        this.month++;
+                    }
+                    this.getDays();
+                },
+
+                goToToday() {
+                    let today = new Date();
+                    this.month = today.getMonth();
+                    this.year = today.getFullYear();
+                    this.getDays();
+                },
+
+                isToday(day) {
+                    let today = new Date();
+                    return day === today.getDate() && this.month === today.getMonth() && this.year === today.getFullYear();
+                },
+
+                getEventsForDay(day) {
+                    return this.events.filter(event => {
+                        if (!event.startDate) return false;
+                        let eventDate = new Date(event.startDate);
+                        return eventDate.getDate() === day && eventDate.getMonth() === this.month && eventDate.getFullYear() === this.year;
+                    });
+                },
+
+                openModal(day = null) {
+                    this.editingEventId = null;
+                    let date = day ? new Date(this.year, this.month, day) : new Date();
+                    
+                    let YYYY = date.getFullYear();
+                    let MM = String(date.getMonth() + 1).padStart(2, '0');
+                    let DD = String(date.getDate()).padStart(2, '0');
+                    let dateStr = `${YYYY}-${MM}-${DD}T10:00`;
+                    
+                    this.modalEvent = {
+                        title: '',
+                        category: 'Tarea',
+                        color: 'blue',
+                        status: 'TODO',
+                        startDate: dateStr,
+                        endDate: dateStr,
+                        description: ''
+                    };
+                    this.showModal = true;
+                },
+
+                editEvent(event) {
+                    this.editingEventId = event.id;
+                    this.modalEvent = {
+                        title: event.title,
+                        category: event.category,
+                        color: event.color,
+                        status: event.status || 'TODO',
+                        startDate: event.startDate ? event.startDate.slice(0, 16) : '',
+                        endDate: event.endDate ? event.endDate.slice(0, 16) : '',
+                        description: event.description
+                    };
+                    this.showModal = true;
+                },
+
+                closeModal() {
+                    this.showModal = false;
+                },
+
+                async saveEvent() {
+                    const method = this.editingEventId ? 'PUT' : 'POST';
+                    const url = this.editingEventId ? `/planeacion/api/eventos/${this.editingEventId}` : '/planeacion/api/eventos';
+                    
+                    try {
+                        const response = await fetch(url, {
+                            method: method,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
+                            },
+                            body: JSON.stringify(this.modalEvent)
+                        });
+
+                        if (response.ok) {
+                            await this.loadEvents();
+                            this.closeModal();
+                        }
+                    } catch (e) {
+                        console.error("Error saving event", e);
+                    }
+                },
+
+                async deleteEvent() {
+                    if (!confirm('¿Seguro que quieres eliminar este evento?')) return;
+                    
+                    try {
+                        const response = await fetch(`/planeacion/api/eventos/${this.editingEventId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
+                            }
+                        });
+
+                        if (response.ok) {
+                            await this.loadEvents();
+                            this.closeModal();
+                        }
+                    } catch (e) {
+                        console.error("Error deleting event", e);
+                    }
+                },
+
+                // Drag and Drop Logic
+                dragStart(event, item) {
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', item.id);
+                    event.target.classList.add('opacity-50', 'scale-95');
+                },
+                dragEnd(event) {
+                    event.target.classList.remove('opacity-50', 'scale-95');
+                },
+                allowDrop(event) {
+                    event.preventDefault();
+                    // Add some visual cue
+                },
+                async drop(event, newStatus) {
+                    event.preventDefault();
+                    const id = event.dataTransfer.getData('text/plain');
+                    const item = this.events.find(e => e.id == id);
+                    if (item && item.status !== newStatus) {
+                        item.status = newStatus;
+                        // Quick optimistic update UI (handled by alpine reacting to array change)
+                        // Persist to backend
+                        await this.updateEventStatusAPI(item);
+                    }
+                },
+                async updateEventStatusAPI(item) {
+                     try {
+                        await fetch(`/planeacion/api/eventos/${item.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
+                            },
+                            body: JSON.stringify(item)
+                        });
+                    } catch (e) {
+                        console.error("Error updating event status", e);
+                    }
+                }
+            };
+        }
+    </script>
+
+    <div x-data="calendarApp()" x-init="init()" class="h-full flex flex-col space-y-6" x-cloak>
+
+        <!-- Header Controls -->
+        <div class="flex items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm transition-colors">
+            <div class="flex items-center gap-6">
+                <!-- View Toggle -->
+                <div class="flex bg-slate-100 dark:bg-slate-700/50 p-1 rounded-xl">
+                    <button @click="view = 'calendar'" 
+                            :class="view === 'calendar' ? 'bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'"
+                            class="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Calendario
+                    </button>
+                    <button @click="view = 'kanban'" 
+                            :class="view === 'kanban' ? 'bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'"
+                            class="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+                        Tablero
+                    </button>
+                </div>
+
+                <div x-show="view === 'calendar'" class="flex items-center gap-4 animate-fade-in">
+                    <h2 class="text-xl font-bold text-slate-800 dark:text-white" x-text="monthName + ' ' + year"></h2>
+                    <div class="flex items-center bg-slate-100 dark:bg-slate-700/50 rounded-xl p-1">
+                        <button @click="previousMonth()" class="p-1.5 hover:bg-white dark:hover:bg-slate-600 hover:shadow-sm rounded-lg transition-all text-slate-600 dark:text-slate-300">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <button @click="goToToday()" class="px-3 py-1 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-600 hover:shadow-sm rounded-lg transition-all uppercase tracking-wider">Hoy</button>
+                        <button @click="nextMonth()" class="p-1.5 hover:bg-white dark:hover:bg-slate-600 hover:shadow-sm rounded-lg transition-all text-slate-600 dark:text-slate-300">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div x-show="view === 'kanban'" class="animate-fade-in">
+                    <h2 class="text-xl font-bold text-slate-800 dark:text-white">Tablero Kanban</h2>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button @click="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-blue-500/20 transition-all text-sm flex items-center gap-2 hover:scale-105">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                    Nuevo Evento
+                </button>
+            </div>
+        </div>
+
+        <!-- VIEW: Calendar -->
+        <div x-show="view === 'calendar'" class="flex-1 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col min-h-[600px] animate-fade-in transition-colors">
+            <!-- Day names -->
+            <div class="grid grid-cols-7 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/80">
+                <template x-for="day in dayNames" :key="day">
+                    <div class="py-3 text-center text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest" x-text="day"></div>
+                </template>
+            </div>
+
+            <!-- Days grid -->
+            <div class="flex-1 grid grid-cols-7 auto-rows-fr">
+                <template x-for="blank in blankDays">
+                    <div class="border-r border-b border-slate-50 dark:border-slate-700/50 bg-slate-50/10 dark:bg-slate-800/20"></div>
+                </template>
+                <template x-for="(day, dayIndex) in daysInMonth" :key="dayIndex">
+                    <div class="border-r border-b border-slate-50 dark:border-slate-700/50 p-2 min-h-[100px] hover:bg-slate-50/30 dark:hover:bg-slate-700/30 transition-colors group relative"
+                         :class="{'bg-blue-50/30 dark:bg-blue-900/10': isToday(day)}">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="text-sm font-bold text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" 
+                                  :class="{'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 px-1.5 py-0.5 rounded-lg': isToday(day)}"
+                                  x-text="day"></span>
+                        </div>
+                        
+                        <!-- Events List -->
+                        <div class="space-y-1 overflow-y-auto max-h-[100px] custom-scrollbar">
+                            <template x-for="event in getEventsForDay(day)" :key="event.id">
+                                <div @click="editEvent(event)"
+                                     class="px-2 py-1 rounded-lg text-[10px] font-bold truncate cursor-pointer transition-all hover:scale-[1.02] shadow-sm"
+                                     :class="{
+                                        'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-2 border-blue-500': event.category === 'Reunión',
+                                        'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-l-2 border-purple-500': event.category === 'Tarea',
+                                        'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-l-2 border-orange-500': event.category === 'Hito',
+                                        'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-l-2 border-slate-500': !['Reunión', 'Tarea', 'Hito'].includes(event.category)
+                                     }"
+                                     x-text="event.title"></div>
+                            </template>
+                        </div>
+
+                        <!-- Add button on hover -->
+                        <button @click="openModal(day)" class="absolute bottom-2 right-2 p-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-300 opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 shadow-sm">
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- VIEW: Kanban -->
+        <div x-show="view === 'kanban'" class="flex-1 flex gap-6 overflow-x-auto pb-4 custom-scrollbar animate-fade-in" x-cloak>
+            <template x-for="status in ['TODO', 'IN_PROGRESS', 'DONE']" :key="status">
+                <div class="flex-shrink-0 w-80 flex flex-col gap-4"
+                     @dragover.prevent="allowDrop($event)"
+                     @drop.prevent="drop($event, status)">
+                    <div class="flex items-center justify-between px-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full" 
+                                  :class="{'bg-slate-400': status === 'TODO', 'bg-blue-500': status === 'IN_PROGRESS', 'bg-green-500': status === 'DONE'}"></span>
+                            <h3 class="font-black text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400" 
+                                x-text="status === 'TODO' ? 'Pendiente' : (status === 'IN_PROGRESS' ? 'En Progreso' : 'Completado')"></h3>
+                        </div>
+                        <span class="text-xs font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full" x-text="events.filter(e => (e.status || 'TODO') === status).length"></span>
+                    </div>
+                    
+                    <div class="flex-1 bg-slate-50/50 dark:bg-slate-800/30 rounded-3xl border border-slate-100 dark:border-slate-700 p-3 space-y-3 overflow-y-auto custom-scrollbar min-h-[500px]">
+                        <template x-for="event in events.filter(e => (e.status || 'TODO') === status)" :key="event.id">
+                            <!-- Draggable Card -->
+                            <div draggable="true"
+                                 @dragstart="dragStart($event, event)"
+                                 @dragend="dragEnd($event)"
+                                 class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-grab active:cursor-grabbing group">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg"
+                                          :class="{
+                                            'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400': event.category === 'Reunión',
+                                            'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400': event.category === 'Tarea',
+                                            'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400': event.category === 'Hito',
+                                            'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400': !['Reunión', 'Tarea', 'Hito'].includes(event.category)
+                                          }" x-text="event.category"></span>
+                                    <button @click.stop="editEvent(event)" class="text-slate-300 dark:text-slate-600 hover:text-blue-500 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    </button>
+                                </div>
+                                <h4 class="font-bold text-slate-800 dark:text-white text-sm mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" x-text="event.title"></h4>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 line-clamp-2 mb-3" x-text="event.description"></p>
+                                <div class="flex items-center justify-between pt-3 border-t border-slate-50 dark:border-slate-700/50">
+                                    <div class="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        <span class="text-[10px] font-bold" x-text="new Date(event.startDate).toLocaleDateString()"></span>
+                                    </div>
+                                    <div class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[8px] font-black text-slate-400 dark:text-slate-300">A</div>
+                                </div>
+                            </div>
+                        </template>
+                        <button @click="openModal(); modalEvent.status = status" 
+                                class="w-full py-3 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl text-slate-400 dark:text-slate-500 hover:text-blue-500 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-500/50 hover:bg-blue-50/30 dark:hover:bg-blue-500/5 transition-all flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                            <span class="text-xs font-bold">Añadir Tarea</span>
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Event Modal -->
+        <div x-show="showModal" 
+             class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-cloak>
+            <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-slate-700" @click.away="closeModal()">
+                <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/80">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white" x-text="editingEventId ? 'Editar Evento' : 'Nuevo Evento'"></h3>
+                    <button @click="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                
+                <div class="p-8 space-y-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Título del Evento</label>
+                        <input type="text" x-model="modalEvent.title" placeholder="Ej: Lanzamiento de producto"
+                               class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all font-medium text-slate-700 dark:text-white">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Categoría</label>
+                            <select x-model="modalEvent.category" 
+                                    class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all font-medium text-slate-700 dark:text-white">
+                                <option value="Reunión">Reunión</option>
+                                <option value="Tarea">Tarea</option>
+                                <option value="Hito">Hito</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Estado</label>
+                            <select x-model="modalEvent.status" 
+                                    class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all font-medium text-slate-700 dark:text-white">
+                                <option value="TODO">Pendiente</option>
+                                <option value="IN_PROGRESS">En Progreso</option>
+                                <option value="DONE">Completado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Fecha Inicio</label>
+                            <input type="datetime-local" x-model="modalEvent.startDate"
+                                   class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all font-medium text-slate-700 dark:text-white text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Fecha Fin</label>
+                            <input type="datetime-local" x-model="modalEvent.endDate"
+                                   class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all font-medium text-slate-700 dark:text-white text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Descripción</label>
+                        <textarea x-model="modalEvent.description" rows="3" placeholder="Detalles adicionales..."
+                                  class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all font-medium text-slate-700 dark:text-white text-sm resize-none"></textarea>
+                    </div>
+                </div>
+
+                <div class="px-8 py-6 bg-slate-50/50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                    <button x-show="editingEventId" @click="deleteEvent()" 
+                            class="text-red-500 hover:text-red-600 font-bold text-sm transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Eliminar
+                    </button>
+                    <div class="flex items-center gap-3 ml-auto">
+                        <button @click="closeModal()" class="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold text-sm transition-all">Cancelar</button>
+                        <button @click="saveEvent()" class="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all text-sm">Guardar Evento</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CSRF Token helper -->
+        <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+
+    </div>
+
+    <style>
+        [x-cloak] { display: none !important; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+
+</div>
+</body>
+</html>

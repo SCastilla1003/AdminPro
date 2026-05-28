@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/dashboard :: layout(
+        pageTitle    = 'Mi Perfil',
+        pageSubtitle = 'Configura tu información personal',
+        activePage   = 'perfil',
+        content      = ~{::main-content}
+      )}">
+<head></head>
+<body>
+<th:block th:fragment="main-content">
+
+  <!-- Flash messages -->
+  <div th:if="${successMsg}" class="mb-5 flex items-center gap-3 bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm">
+    <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+    </svg>
+    <span th:text="${successMsg}">Éxito</span>
+  </div>
+  <div th:if="${errorMsg}" class="mb-5 flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+    <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+    </svg>
+    <span th:text="${errorMsg}">Error</span>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 max-w-6xl">
+
+    <!-- LEFT: Photo card -->
+    <div class="xl:col-span-1 space-y-5">
+
+      <!-- Profile photo card -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 text-center">
+        <h2 class="font-bold text-slate-900 text-sm mb-5 text-left">Foto de Perfil</h2>
+
+        <!-- Avatar display -->
+        <div class="relative inline-block mb-5">
+          <div class="w-28 h-28 rounded-full bg-blue-500 flex items-center justify-center text-white text-4xl font-black mx-auto overflow-hidden ring-4 ring-blue-100">
+            <img th:if="${user.profilePhoto != null}"
+                 th:src="@{'/uploads/' + ${user.profilePhoto}}"
+                 class="w-full h-full object-cover"
+                 alt="Foto de perfil">
+            <span th:if="${user.profilePhoto == null}"
+                  th:text="${#strings.substring(user.fullName != null ? user.fullName : user.username, 0, 1).toUpperCase()}">A</span>
+          </div>
+          <!-- Active indicator -->
+          <div class="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+        </div>
+
+        <div class="font-bold text-slate-900" th:text="${user.fullName != null ? user.fullName : user.username}">Nombre</div>
+        <div class="text-sm text-slate-500 mb-5" th:text="${user.jobTitle != null ? user.jobTitle : 'Sin cargo asignado'}">Cargo</div>
+
+        <!-- Upload form -->
+        <form th:action="@{/perfil/foto}" method="post" enctype="multipart/form-data" class="space-y-2">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+          <label for="photo-input"
+                 class="block w-full cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold py-2.5 px-4 rounded-xl text-sm transition-colors border border-blue-200 text-center">
+            📷 Cambiar Foto
+          </label>
+          <input id="photo-input" type="file" name="photo" accept="image/*" class="hidden"
+                 onchange="this.form.submit()">
+        </form>
+
+        <!-- Delete photo -->
+        <form th:if="${user.profilePhoto != null}"
+              th:action="@{/perfil/foto/eliminar}" method="post" class="mt-2">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+          <button type="submit"
+                  onclick="return confirm('¿Eliminar tu foto de perfil?')"
+                  class="w-full text-sm text-red-500 hover:text-red-600 hover:bg-red-50 py-2 rounded-xl transition-colors font-medium">
+            🗑 Eliminar foto
+          </button>
+        </form>
+
+        <p class="text-xs text-slate-400 mt-3">JPG, PNG o GIF · Máx. 10MB</p>
+      </div>
+
+      <!-- Info card -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+        <h3 class="font-bold text-slate-900 text-sm">Información de cuenta</h3>
+        <div class="space-y-2 text-sm">
+          <div class="flex items-center gap-2 text-slate-600">
+            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            <span>@<span th:text="${user.username}">usuario</span></span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-600">
+            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            <span class="truncate" th:text="${user.email}">correo</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            <div class="flex flex-wrap gap-1">
+              <span th:each="role : ${user.roles}"
+                    th:text="${role.name == 'ROLE_ADMIN'} ? 'Administrador' : 'Usuario'"
+                    th:classappend="${role.name == 'ROLE_ADMIN'} ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'"
+                    class="text-xs font-semibold px-2 py-0.5 rounded-full">Rol</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Forms -->
+    <div class="xl:col-span-2 space-y-5">
+
+      <!-- Personal data form -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100">
+          <h2 class="font-bold text-slate-900">Datos Personales</h2>
+          <p class="text-sm text-slate-400 mt-0.5">Actualiza tu información de perfil.</p>
+        </div>
+        <form th:action="@{/perfil/guardar}" method="post" class="p-6">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nombre Completo</label>
+              <input type="text" name="fullName" th:value="${user.fullName}"
+                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-400 focus:ring-3 focus:ring-blue-100 outline-none transition-all text-sm"
+                     placeholder="Tu nombre completo">
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Correo Electrónico</label>
+              <input type="email" name="email" th:value="${user.email}"
+                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-400 focus:ring-3 focus:ring-blue-100 outline-none transition-all text-sm"
+                     placeholder="tu@correo.com">
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Cargo en la Empresa</label>
+              <input type="text" name="jobTitle" th:value="${user.jobTitle}"
+                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-400 focus:ring-3 focus:ring-blue-100 outline-none transition-all text-sm"
+                     placeholder="Ej: Coordinador de Ventas">
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Fecha de Nacimiento</label>
+              <input type="date" name="birthDate"
+                     th:value="${user.birthDate != null ? user.birthDate : ''}"
+                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-400 focus:ring-3 focus:ring-blue-100 outline-none transition-all text-sm">
+            </div>
+
+          </div>
+          <div class="flex justify-end mt-6">
+            <button type="submit" id="btn-guardar-perfil"
+                    class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/20 transition-all text-sm">
+              Guardar Cambios
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Change password form -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100">
+          <h2 class="font-bold text-slate-900">Cambiar Contraseña</h2>
+          <p class="text-sm text-slate-400 mt-0.5">Actualiza tu contraseña de acceso.</p>
+        </div>
+
+        <div th:if="${passwordError}" class="mx-6 mt-4 flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+          </svg>
+          <span th:text="${passwordError}">Error</span>
+        </div>
+        <div th:if="${passwordSuccess}" class="mx-6 mt-4 flex items-center gap-3 bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm">
+          <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <span th:text="${passwordSuccess}">Éxito</span>
+        </div>
+
+        <form th:action="@{/perfil/password}" method="post" class="p-6">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Contraseña Actual</label>
+              <input type="password" name="currentPassword" required
+                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-400 focus:ring-3 focus:ring-blue-100 outline-none transition-all text-sm"
+                     placeholder="••••••••">
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nueva Contraseña</label>
+              <input type="password" name="newPassword" required
+                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-400 focus:ring-3 focus:ring-blue-100 outline-none transition-all text-sm"
+                     placeholder="Mínimo 6 caracteres">
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Confirmar Contraseña</label>
+              <input type="password" name="confirmPassword" required
+                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-400 focus:ring-3 focus:ring-blue-100 outline-none transition-all text-sm"
+                     placeholder="Repite la contraseña">
+            </div>
+
+          </div>
+          <div class="flex justify-end mt-6">
+            <button type="submit" id="btn-cambiar-password"
+                    class="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-xl shadow-lg shadow-slate-500/20 transition-all text-sm">
+              Cambiar Contraseña
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+</th:block>
+</body>
+</html>

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard :: layout(
+        pageTitle    = 'Control de Asistencia',
+        pageSubtitle = 'Registro y resumen de asistencia del personal',
+        activePage   = 'asistencia',
+        content      = ~{::main-content}
+      )}">
+<head></head>
+<body>
+<th:block th:fragment="main-content">
+
+  <!-- Flash -->
+  <div th:if="${successMsg}" class="mb-5 flex items-center gap-3 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 text-green-700 dark:text-green-400 rounded-xl px-4 py-3 text-sm">
+    <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+    <span th:text="${successMsg}"></span>
+  </div>
+
+  <!-- Header con acceso rápido a configuración (solo admin) -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h2 class="text-xl font-black text-slate-800 dark:text-white">Asistencia de Hoy</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Registro en tiempo real del personal</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold border border-blue-200">Panel Central</span>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- COLUMNA IZQUIERDA (Registro y Reportes) -->
+    <div class="lg:col-span-2 space-y-6">
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden mb-8">
+
+    <!-- Header tabla -->
+    <div class="px-6 py-5 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
+        <h2 class="font-bold text-slate-900 dark:text-white text-base">Registro del Día</h2>
+        <p class="text-xs text-slate-400 mt-0.5" x-data="clockWidget()" x-text="'Hora actual: ' + currentTime">Hora actual: --:--</p>
+      </div>
+      <div class="flex items-center gap-4 text-xs font-bold flex-wrap">
+        <span class="flex items-center gap-1.5 text-green-600">
+          <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
+          A Tiempo: <span th:text="${countOnTime}">0</span>
+        </span>
+        <span class="flex items-center gap-1.5 text-amber-600">
+          <span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+          Tarde: <span th:text="${countLate}">0</span>
+        </span>
+        <span class="flex items-center gap-1.5 text-red-500">
+          <span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
+          Ausente: <span th:text="${countAbsent}">0</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700">
+            <th class="text-left text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-3">Usuario</th>
+            <th class="text-left text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-3">Entrada</th>
+            <th class="text-left text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-3">Salida</th>
+            <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-3">Estado</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50 dark:divide-slate-700/50">
+          <tr th:each="rec : ${todayRecords}" class="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
+            <td class="px-6 py-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs"
+                     th:text="${#strings.substring(rec.user.username, 0, 1).toUpperCase()}">U</div>
+                <span class="text-sm font-semibold text-slate-800 dark:text-white"
+                      th:text="${rec.user.fullName != null ? rec.user.fullName : rec.user.username}">Usuario</span>
+              </div>
+            </td>
+            <td class="px-6 py-3 text-sm text-slate-600 dark:text-slate-400 font-mono"
+                th:text="${rec.timeIn != null ? rec.timeIn : '—'}">—</td>
+            <td class="px-6 py-3">
+              <span th:if="${rec.timeOut != null}"
+                    class="text-sm font-mono text-slate-600 dark:text-slate-400"
+                    th:text="${rec.timeOut}">—</span>
+              <span th:if="${rec.timeOut == null and rec.status != 'AUSENTE'}"
+                    class="text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-full">En oficina</span>
+              <span th:if="${rec.status == 'AUSENTE'}" class="text-slate-400 text-sm">—</span>
+            </td>
+            <td class="px-6 py-3 text-right">
+              <span th:if="${rec.status == 'A_TIEMPO'}"
+                    class="inline-flex items-center gap-1 text-[10px] font-black text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 px-2.5 py-1 rounded-full border border-green-200 dark:border-green-500/20 uppercase">✓ A Tiempo</span>
+              <span th:if="${rec.status == 'TARDE'}"
+                    class="inline-flex items-center gap-1 text-[10px] font-black text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-500/20 uppercase">⚠ Tarde</span>
+              <span th:if="${rec.status == 'AUSENTE'}"
+                    class="inline-flex items-center gap-1 text-[10px] font-black text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 px-2.5 py-1 rounded-full border border-red-200 dark:border-red-500/20 uppercase">✕ Ausente</span>
+            </td>
+          </tr>
+          <tr th:if="${todayRecords.empty}">
+            <td colspan="4" class="px-6 py-16 text-center text-slate-400 dark:text-slate-500">
+              <svg class="w-10 h-10 mx-auto mb-3 text-slate-200 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              No hay registros de asistencia para hoy.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== SECCIÓN DE REPORTES ===== -->
+  <div class="space-y-6">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+      <!-- Header Reportes -->
+      <div class="px-6 py-5 border-b border-slate-100 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="font-bold text-slate-900 dark:text-white text-base">Resumen de Asistencia</h2>
+          <p class="text-xs text-slate-500 mt-1">Reportes acumulados para el cálculo de nómina y seguimiento</p>
+        </div>
+
+        <form th:action="@{/asistencia}" method="get" class="flex flex-wrap items-center gap-2">
+          <select name="month" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm font-semibold outline-none focus:border-blue-400">
+            <option value="1"  th:selected="${currentMonth == 1}">Enero</option>
+            <option value="2"  th:selected="${currentMonth == 2}">Febrero</option>
+            <option value="3"  th:selected="${currentMonth == 3}">Marzo</option>
+            <option value="4"  th:selected="${currentMonth == 4}">Abril</option>
+            <option value="5"  th:selected="${currentMonth == 5}">Mayo</option>
+            <option value="6"  th:selected="${currentMonth == 6}">Junio</option>
+            <option value="7"  th:selected="${currentMonth == 7}">Julio</option>
+            <option value="8"  th:selected="${currentMonth == 8}">Agosto</option>
+            <option value="9"  th:selected="${currentMonth == 9}">Septiembre</option>
+            <option value="10" th:selected="${currentMonth == 10}">Octubre</option>
+            <option value="11" th:selected="${currentMonth == 11}">Noviembre</option>
+            <option value="12" th:selected="${currentMonth == 12}">Diciembre</option>
+          </select>
+          <select name="year" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm font-semibold outline-none focus:border-blue-400">
+            <option th:each="y : ${#numbers.sequence(2024, 2026)}" th:value="${y}" th:text="${y}" th:selected="${currentYear == y}"></option>
+          </select>
+          <button type="submit" class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-md">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </button>
+        </form>
+      </div>
+
+      <!-- Tabs -->
+      <div class="px-6" x-data="{ reportTab: 'monthly' }">
+        <div class="flex gap-6 border-b border-slate-100 dark:border-slate-700">
+          <button @click="reportTab = 'monthly'"
+                  :class="reportTab === 'monthly' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'"
+                  class="py-4 border-b-2 font-bold text-sm transition-all">Resumen Mensual</button>
+          <button @click="reportTab = 'annual'"
+                  :class="reportTab === 'annual' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'"
+                  class="py-4 border-b-2 font-bold text-sm transition-all">Resumen Anual</button>
+        </div>
+
+        <!-- Tab Mensual -->
+        <div x-show="reportTab === 'monthly'" class="py-4" x-transition>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700">
+                  <th class="text-left text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-4">Empleado</th>
+                  <th class="text-center text-xs font-bold text-green-600 uppercase tracking-widest px-4 py-4">A Tiempo</th>
+                  <th class="text-center text-xs font-bold text-amber-600 uppercase tracking-widest px-4 py-4">Tardes</th>
+                  <th class="text-center text-xs font-bold text-red-500 uppercase tracking-widest px-4 py-4">Ausencias</th>
+                  <th class="text-center text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4">Total Días</th>
+                  <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-4">Asistencia %</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-50 dark:divide-slate-700/50">
+                <tr th:each="sum : ${monthlySummaries}" class="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-black text-sm"
+                           th:text="${#strings.substring(sum.username, 0, 1).toUpperCase()}">E</div>
+                      <div>
+                        <div class="text-sm font-bold text-slate-800 dark:text-white" th:text="${sum.fullName}">Nombre</div>
+                        <div class="text-[10px] text-slate-400 font-medium" th:text="'@' + ${sum.username}">@user</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-4 text-center font-bold text-sm text-green-600" th:text="${sum.onTimeCount}">0</td>
+                  <td class="px-4 py-4 text-center font-bold text-sm text-amber-600" th:text="${sum.lateCount}">0</td>
+                  <td class="px-4 py-4 text-center font-bold text-sm text-red-500" th:text="${sum.absentCount}">0</td>
+                  <td class="px-4 py-4 text-center font-bold text-sm text-slate-600 dark:text-slate-400" th:text="${sum.totalDays}">0</td>
+                  <td class="px-6 py-4 text-right">
+                    <span th:with="percent=${sum.totalDays > 0 ? (sum.presentCount * 100.0 / sum.totalDays) : 0}"
+                          th:class="${percent >= 90 ? 'text-green-600 bg-green-50 dark:bg-green-500/10' : (percent >= 75 ? 'text-amber-600 bg-amber-50 dark:bg-amber-500/10' : 'text-red-600 bg-red-50 dark:bg-red-500/10')}"
+                          class="px-2.5 py-1 rounded-lg text-xs font-black border border-current"
+                          th:text="${#numbers.formatDecimal(percent, 1, 1)} + '%'">100%</span>
+                  </td>
+                </tr>
+                <tr th:if="${monthlySummaries.empty}">
+                  <td colspan="6" class="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
+                    <svg class="w-10 h-10 mx-auto mb-3 text-slate-200 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    No hay registros para este mes.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab Anual -->
+        <div x-show="reportTab === 'annual'" class="py-4" x-transition>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700">
+                  <th class="text-left text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-4">Empleado</th>
+                  <th class="text-center text-xs font-bold text-green-600 uppercase tracking-widest px-4 py-4">A Tiempo</th>
+                  <th class="text-center text-xs font-bold text-amber-600 uppercase tracking-widest px-4 py-4">Tardes</th>
+                  <th class="text-center text-xs font-bold text-red-500 uppercase tracking-widest px-4 py-4">Ausencias</th>
+                  <th class="text-center text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4">Total Días</th>
+                  <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-4">Eficiencia Anual</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-50 dark:divide-slate-700/50">
+                <tr th:each="sum : ${annualSummaries}" class="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-sm"
+                           th:text="${#strings.substring(sum.username, 0, 1).toUpperCase()}">E</div>
+                      <div>
+                        <div class="text-sm font-bold text-slate-800 dark:text-white" th:text="${sum.fullName}">Nombre</div>
+                        <div class="text-[10px] text-slate-400 font-medium" th:text="'@' + ${sum.username}">@user</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-4 text-center font-bold text-sm text-green-600" th:text="${sum.onTimeCount}">0</td>
+                  <td class="px-4 py-4 text-center font-bold text-sm text-amber-600" th:text="${sum.lateCount}">0</td>
+                  <td class="px-4 py-4 text-center font-bold text-sm text-red-500" th:text="${sum.absentCount}">0</td>
+                  <td class="px-4 py-4 text-center font-bold text-sm text-slate-600 dark:text-slate-400" th:text="${sum.totalDays}">0</td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                      <div class="w-24 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-blue-500"
+                             th:with="percent=${sum.totalDays > 0 ? (sum.presentCount * 100.0 / sum.totalDays) : 0}"
+                             th:style="'width: ' + ${percent} + '%'"></div>
+                      </div>
+                      <span class="text-xs font-bold text-slate-600 dark:text-slate-300"
+                            th:with="percent=${sum.totalDays > 0 ? (sum.presentCount * 100.0 / sum.totalDays) : 0}"
+                            th:text="${#numbers.formatDecimal(percent, 1, 1)} + '%'">0%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr th:if="${annualSummaries.empty}">
+                  <td colspan="6" class="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
+                    <svg class="w-10 h-10 mx-auto mb-3 text-slate-200 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    No hay registros para este año.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FINAL DE COLUMNA IZQUIERDA -->
+  </div>
+
+  <!-- COLUMNA DERECHA (Configuración y Estado, solo admin) -->
+  <div class="space-y-6" sec:authorize="hasAuthority('ROLE_ADMIN')">
+      
+      <!-- ===== CARD: Estado Actual del Sistema ===== -->
+      <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="bg-slate-800 px-6 py-4 flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center">
+            <svg class="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-white font-black text-sm">Estado Actual</h2>
+            <p class="text-slate-400 text-xs">Parámetros activos</p>
+          </div>
+        </div>
+
+        <div class="p-5" x-data="clockWidget()">
+          <div class="grid grid-cols-2 gap-4">
+
+            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 text-center flex flex-col items-center justify-center col-span-2">
+              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Hora Actual</p>
+              <p class="text-xl font-black text-slate-800 dark:text-white font-mono" x-text="currentTime">--:--</p>
+            </div>
+
+            <div class="bg-green-50 dark:bg-green-900/20 rounded-2xl p-3 border border-green-200 dark:border-green-700/50 text-center flex flex-col items-center justify-center">
+              <p class="text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-widest mb-1">Apertura</p>
+              <p class="text-lg font-black text-green-700 dark:text-green-300" th:text="${settings.openTime}">07:00</p>
+            </div>
+
+            <div class="bg-red-50 dark:bg-red-900/20 rounded-2xl p-3 border border-red-200 dark:border-red-700/50 text-center flex flex-col items-center justify-center">
+              <p class="text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-1">Cierre</p>
+              <p class="text-lg font-black text-red-700 dark:text-red-300" th:text="${settings.closeTime}">17:00</p>
+            </div>
+
+            <div class="bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-3 border border-amber-200 dark:border-amber-700/50 text-center flex flex-col items-center justify-center col-span-2">
+              <p class="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1">Tolerancia</p>
+              <p class="text-lg font-black text-amber-700 dark:text-amber-300"><span th:text="${settings.gracePeriodMinutes}">15</span> min</p>
+            </div>
+
+            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-2xl p-3 border border-slate-100 dark:border-slate-700 text-center flex flex-col items-center justify-center col-span-2">
+              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Fines de Semana</p>
+              <span th:if="${settings.restrictWeekends}" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 font-bold text-xs">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                Restringido
+              </span>
+              <span th:unless="${settings.restrictWeekends}" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 font-bold text-xs">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+                Libre
+              </span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CARD: Formulario de Configuración ===== -->
+      <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="bg-blue-600 px-6 py-4 flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-blue-700 flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-white font-black text-sm">Modificar Horario</h2>
+            <p class="text-blue-200 text-[10px]">Ajusta las horas y tolerancia</p>
+          </div>
+        </div>
+
+        <form th:action="@{/asistencia/config}" method="post" class="p-5 space-y-4">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">Hora de Entrada</label>
+            <input type="time" name="openTime" required
+                   th:value="${settings.openTime}"
+                   class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all text-sm font-bold shadow-sm">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">Hora de Cierre</label>
+            <input type="time" name="closeTime" required
+                   th:value="${settings.closeTime}"
+                   class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all text-sm font-bold shadow-sm">
+          </div>
+
+          <div class="border-t border-slate-100 dark:border-slate-700 pt-4"></div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">Tiempo de Gracia (minutos)</label>
+            <input type="number" name="gracePeriodMinutes" min="1" max="120"
+                   th:value="${settings.gracePeriodMinutes}"
+                   class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all text-sm font-bold shadow-sm">
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">Zona Horaria</label>
+            <select name="timezone"
+                    class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all text-xs font-semibold shadow-sm">
+              <option value="America/Bogota"       th:selected="${settings.timezone == 'America/Bogota'}">🇨🇴 Colombia (GMT-5)</option>
+              <option value="America/New_York"     th:selected="${settings.timezone == 'America/New_York'}">🇺🇸 Nueva York (EST)</option>
+              <option value="America/Mexico_City"  th:selected="${settings.timezone == 'America/Mexico_City'}">🇲🇽 México (CST)</option>
+              <option value="America/Lima"         th:selected="${settings.timezone == 'America/Lima'}">🇵🇪 Lima (GMT-5)</option>
+              <option value="America/Buenos_Aires" th:selected="${settings.timezone == 'America/Buenos_Aires'}">🇦🇷 Buenos Aires (GMT-3)</option>
+              <option value="America/Santiago"     th:selected="${settings.timezone == 'America/Santiago'}">🇨🇱 Santiago (GMT-4)</option>
+              <option value="Europe/Madrid"        th:selected="${settings.timezone == 'Europe/Madrid'}">🇪🇸 Madrid (CET)</option>
+              <option value="UTC"                  th:selected="${settings.timezone == 'UTC'}">🌐 UTC</option>
+            </select>
+          </div>
+
+          <!-- Toggle Fines de Semana -->
+          <div class="mt-4 flex flex-col justify-between p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/30 gap-3">
+            <div>
+              <div class="text-xs font-black text-slate-800 dark:text-white">Fines de Semana</div>
+              <div class="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-1">Impedir registrar entrada Sábado y Domingo.</div>
+            </div>
+            <input type="hidden" id="restrictWeekendsInput" name="restrictWeekends" th:value="${settings.restrictWeekends}">
+            <div id="weekendTrack"
+                 onclick="toggleWeekend()"
+                 th:data-on="${settings.restrictWeekends}"
+                 style="position:relative;width:44px;height:24px;border-radius:12px;cursor:pointer;transition:background-color 0.3s ease;flex-shrink:0;user-select:none;margin-left:auto;"
+                 th:style="${settings.restrictWeekends} ? 'position:relative;width:44px;height:24px;border-radius:12px;cursor:pointer;transition:background-color 0.3s ease;flex-shrink:0;margin-left:auto;background-color:#2563eb;' : 'position:relative;width:44px;height:24px;border-radius:12px;cursor:pointer;transition:background-color 0.3s ease;flex-shrink:0;margin-left:auto;background-color:#94a3b8;'">
+              <div id="weekendThumb"
+                   style="position:absolute;top:2px;width:20px;height:20px;background:white;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.3);transition:left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);"
+                   th:style="${settings.restrictWeekends} ? 'position:absolute;top:2px;left:22px;width:20px;height:20px;background:white;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.3);transition:left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);' : 'position:absolute;top:2px;left:2px;width:20px;height:20px;background:white;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.3);transition:left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);'">
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black px-4 py-3 rounded-xl transition-all shadow-md shadow-blue-500/25 text-xs flex items-center justify-center gap-2 hover:scale-[1.02]">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              Guardar Configuración
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+
+  </div> <!-- End Main Grid -->
+
+  <!-- SCRIPTS -->
+  <script>
+    function clockWidget() {
+      return {
+        currentTime: '',
+        init() { this.updateTime(); setInterval(() => this.updateTime(), 1000); },
+        updateTime() { this.currentTime = new Date().toLocaleTimeString('es-CO'); }
+      }
+    }
+
+    function toggleWeekend() {
+      var track = document.getElementById('weekendTrack');
+      var thumb = document.getElementById('weekendThumb');
+      var input = document.getElementById('restrictWeekendsInput');
+      var isOn = track.dataset.on === 'true';
+      isOn = !isOn;
+      track.dataset.on = String(isOn);
+      track.style.backgroundColor = isOn ? '#2563eb' : '#94a3b8';
+      thumb.style.left = isOn ? '22px' : '2px';
+      input.value = String(isOn);
+    }
+  </script>
+</th:block>
+</body>
+</html>

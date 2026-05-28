@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/dashboard :: layout(
+        pageTitle    = 'Chat Corporativo',
+        pageSubtitle = 'Comunicación en tiempo real con el equipo mediante WebSockets',
+        activePage   = 'chat',
+        content      = ~{::chat-content}
+      )}">
+<head></head>
+<body>
+<div th:fragment="chat-content" class="h-full flex flex-col">
+
+  <div class="flex-1 flex overflow-hidden bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm transition-colors">
+
+    <!-- Sidebar: Canales + Usuarios -->
+    <div class="w-64 border-r border-slate-100 dark:border-slate-700 flex flex-col bg-slate-50/50 dark:bg-slate-800/80">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-700">
+            <h3 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Canales</h3>
+        </div>
+        <div class="flex-1 overflow-y-auto p-2 space-y-1">
+            <div @click="selectChannel('general')"
+                 :class="currentChannel === 'general' && !selectedUser ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'"
+                 class="px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-2 cursor-pointer transition-all">
+                <span class="text-blue-200">#</span> general
+            </div>
+        </div>
+
+        <div class="p-5 border-b border-slate-100 dark:border-slate-700">
+            <h3 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Usuarios</h3>
+        </div>
+        <div class="flex-1 overflow-y-auto p-2 space-y-1">
+            <template x-for="user in users" :key="user.username">
+                <div @click="selectUser(user)"
+                     :class="selectedUser && selectedUser.username === user.username ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'"
+                     class="px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-2 cursor-pointer transition-all">
+                    <span class="w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></span>
+                    <span class="truncate" x-text="user.fullName"></span>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="flex-1 flex flex-col bg-white dark:bg-slate-800" x-data="chatApp()" x-init="initChat()">
+
+        <!-- Chat Header -->
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
+            <template x-if="selectedUser">
+                <div class="flex items-center gap-3">
+                    <span class="w-3 h-3 rounded-full bg-green-400"></span>
+                    <div>
+                        <span class="font-bold text-slate-900 dark:text-white" x-text="selectedUser.fullName"></span>
+                        <span class="text-xs text-slate-400 ml-2">(Mensaje privado)</span>
+                    </div>
+                </div>
+            </template>
+            <template x-if="!selectedUser">
+                <div class="flex items-center gap-3">
+                    <span class="text-blue-500 font-bold">#</span>
+                    <span class="font-bold text-slate-900 dark:text-white">general</span>
+                    <span class="text-xs text-slate-400 ml-2">Canal público del equipo</span>
+                </div>
+            </template>
+        </div>
+
+        <!-- Messages Area -->
+        <div id="message-area" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+            <!-- Historical Public Messages -->
+            <th:block th:if="${!selectedUser}" th:each="msg : ${messages}">
+                <div class="flex items-start gap-4" th:classappend="${msg.sender == #authentication.name} ? 'flex-row-reverse' : ''">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shadow-sm"
+                         th:classappend="${msg.sender == #authentication.name} ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300'"
+                         th:text="${#strings.substring(msg.senderFullName != null ? msg.senderFullName : msg.sender, 0, 1)}">U</div>
+                    <div class="max-w-[70%]">
+                        <div class="flex items-center gap-2 mb-1" th:classappend="${msg.sender == #authentication.name} ? 'flex-row-reverse' : ''">
+                            <span class="text-xs font-black text-slate-800 dark:text-slate-200" th:text="${msg.senderFullName != null ? msg.senderFullName : msg.sender}">Usuario</span>
+                            <span class="text-[10px] text-slate-400 dark:text-slate-500" th:text="${#temporals.format(msg.timestamp, 'HH:mm')}">10:00</span>
+                        </div>
+                        <div class="px-4 py-2.5 rounded-2xl text-sm shadow-sm"
+                             th:classappend="${msg.sender == #authentication.name} ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-tl-none border border-slate-200 dark:border-slate-600/50'"
+                             th:text="${msg.content}">Mensaje</div>
+                    </div>
+                </div>
+            </th:block>
+
+            <!-- Dynamic Messages (public or private) -->
+            <template x-for="msg in visibleMessages" :key="msg.timestamp + msg.content">
+                <div class="flex items-start gap-4 animate-fade-in" :class="msg.sender === username ? 'flex-row-reverse' : ''">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shadow-sm"
+                         :class="msg.sender === username ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300'"
+                         x-text="msg.senderFullName ? msg.senderFullName[0] : msg.sender[0]">U</div>
+                    <div class="max-w-[70%]">
+                        <div class="flex items-center gap-2 mb-1" :class="msg.sender === username ? 'flex-row-reverse' : ''">
+                            <span class="text-xs font-black text-slate-800 dark:text-slate-200" x-text="msg.senderFullName || msg.sender">Usuario</span>
+                            <span class="text-[10px] text-slate-400 dark:text-slate-500" x-text="formatTime(msg.timestamp)">10:00</span>
+                            <template x-if="msg.type === 'PRIVATE'">
+                                <span class="text-[9px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-full">Privado</span>
+                            </template>
+                        </div>
+                        <div class="px-4 py-2.5 rounded-2xl text-sm shadow-sm"
+                             :class="msg.sender === username ? 'bg-blue-600 text-white rounded-tr-none' : (msg.type === 'PRIVATE' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-slate-700 dark:text-slate-200 border border-emerald-200 dark:border-emerald-700/50 rounded-tl-none' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600/50 rounded-tl-none')"
+                             x-text="msg.content">Mensaje</div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-6 border-t border-slate-100 dark:border-slate-700">
+            <form @submit.prevent="sendMessage()" class="relative">
+                <input type="text" x-model="newMessage"
+                       :placeholder="selectedUser ? 'Escribe un mensaje privado a ' + selectedUser.fullName + '...' : 'Escribe un mensaje en #general...'"
+                       class="w-full pl-6 pr-14 py-4 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all font-medium text-slate-700 dark:text-slate-200">
+                <button type="submit"
+                        class="absolute right-2 top-2 bottom-2 w-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center transition-all shadow-lg shadow-blue-500/20 hover:scale-105">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9-2-9-18-9 18 9 2zm0 0v-8"/></svg>
+                </button>
+            </form>
+        </div>
+
+    </div>
+  </div>
+
+  <!-- Chat Logic -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+  <script th:inline="javascript">
+    function chatApp() {
+        return {
+            stompClient: null,
+            username: [[${#authentication.name}]],
+            fullName: [[${currentUser != null ? currentUser.fullName : #authentication.name}]],
+            newMessage: '',
+            dynamicMessages: [],
+            users: [],
+            selectedUser: null,
+            currentChannel: 'general',
+
+            initChat() {
+                this.fetchUsers();
+                this.connect();
+                setTimeout(() => this.scrollToBottom(), 100);
+            },
+
+            fetchUsers() {
+                fetch('/chat/usuarios')
+                    .then(r => r.json())
+                    .then(data => { this.users = data; });
+            },
+
+            selectUser(user) {
+                this.selectedUser = user;
+                this.currentChannel = null;
+                this.loadPrivateMessages(user.username);
+            },
+
+            selectChannel(channel) {
+                this.currentChannel = channel;
+                this.selectedUser = null;
+                this.dynamicMessages = this.dynamicMessages.filter(m => m.type !== 'PRIVATE');
+            },
+
+            loadPrivateMessages(withUser) {
+                fetch('/chat/privado?with=' + withUser)
+                    .then(r => r.json())
+                    .then(data => {
+                        this.dynamicMessages = this.dynamicMessages.filter(m => m.type !== 'PRIVATE');
+                        data.forEach(m => this.dynamicMessages.push(m));
+                        this.$nextTick(() => this.scrollToBottom());
+                    });
+            },
+
+            get visibleMessages() {
+                if (this.selectedUser) {
+                    return this.dynamicMessages.filter(m =>
+                        m.type === 'PRIVATE' &&
+                        ((m.sender === this.username && m.recipientUsername === this.selectedUser.username) ||
+                         (m.sender === this.selectedUser.username && m.recipientUsername === this.username))
+                    );
+                }
+                return this.dynamicMessages.filter(m => m.type !== 'PRIVATE');
+            },
+
+            connect() {
+                const socket = new SockJS('/ws-chat');
+                this.stompClient = Stomp.over(socket);
+                this.stompClient.debug = null;
+
+                this.stompClient.connect({}, (frame) => {
+                    this.stompClient.subscribe('/topic/public', (payload) => {
+                        this.onPublicMessageReceived(JSON.parse(payload.body));
+                    });
+
+                    this.stompClient.subscribe('/user/queue/private', (payload) => {
+                        this.onPrivateMessageReceived(JSON.parse(payload.body));
+                    });
+
+                    this.stompClient.send("/app/chat.addUser", {}, JSON.stringify({
+                        sender: this.username,
+                        senderFullName: this.fullName,
+                        type: 'JOIN'
+                    }));
+                });
+            },
+
+            sendMessage() {
+                if (!this.newMessage.trim() || !this.stompClient) return;
+
+                if (this.selectedUser) {
+                    const chatMessage = {
+                        sender: this.username,
+                        senderFullName: this.fullName,
+                        content: this.newMessage,
+                        type: 'PRIVATE',
+                        recipientUsername: this.selectedUser.username
+                    };
+                    this.stompClient.send("/app/chat.sendPrivate", {}, JSON.stringify(chatMessage));
+                } else {
+                    const chatMessage = {
+                        sender: this.username,
+                        senderFullName: this.fullName,
+                        content: this.newMessage,
+                        type: 'CHAT'
+                    };
+                    this.stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
+                }
+                this.newMessage = '';
+            },
+
+            onPublicMessageReceived(message) {
+                if (message.type === 'CHAT' || message.type === 'JOIN') {
+                    this.dynamicMessages.push(message);
+                    this.$nextTick(() => this.scrollToBottom());
+                }
+            },
+
+            onPrivateMessageReceived(message) {
+                if (message.type === 'PRIVATE') {
+                    this.dynamicMessages.push(message);
+                    if (this.selectedUser &&
+                        (message.sender === this.selectedUser.username || message.sender === this.username)) {
+                        this.$nextTick(() => this.scrollToBottom());
+                    }
+                }
+            },
+
+            formatTime(timestamp) {
+                const date = new Date(timestamp);
+                return date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+            },
+
+            scrollToBottom() {
+                const area = document.getElementById('message-area');
+                if(area) area.scrollTop = area.scrollHeight;
+            }
+        }
+    }
+  </script>
+
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+
+</div>
+</body>
+</html>

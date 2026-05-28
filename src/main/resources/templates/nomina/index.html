@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/dashboard :: layout(
+        pageTitle    = 'Gestión de Nómina',
+        pageSubtitle = 'Control de pagos, deducciones y cálculos automáticos',
+        activePage   = 'nomina',
+        content      = ~{::nomina-content}
+      )}">
+<head></head>
+<body>
+<div th:fragment="nomina-content" x-data="payrollApp()">
+
+  <!-- Flash messages -->
+  <div th:if="${successMsg}" class="mb-5 flex items-center gap-3 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 text-green-700 dark:text-green-400 rounded-xl px-4 py-3 text-sm animate-fade-in shadow-sm">
+    <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+    <span th:text="${successMsg}"></span>
+  </div>
+
+  <!-- Header Tabs -->
+  <div class="flex flex-col lg:flex-row items-center justify-between gap-4 mb-6">
+    <div class="bg-white dark:bg-slate-800 p-1 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center transition-colors overflow-x-auto max-w-full">
+      <button @click="tab = 'employees'" :class="tab === 'employees' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-700'" class="px-6 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap">Empleados</button>
+      <button @click="tab = 'liquidate'" :class="tab === 'liquidate' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-700'" class="px-6 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap">Liquidar Nómina</button>
+      <button @click="tab = 'history'" :class="tab === 'history' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-700'" class="px-6 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap">Historial</button>
+      <button @click="tab = 'settings'" :class="tab === 'settings' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-700'" class="px-6 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap">Configuración</button>
+    </div>
+
+    <!-- Filtro de Periodo -->
+    <form th:action="@{/nomina}" method="get" x-show="tab === 'liquidate' || tab === 'history'" class="flex items-center gap-2 bg-white dark:bg-slate-800 p-1 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+      <input type="hidden" name="tab" :value="tab">
+      <select name="month" @change="$el.form.submit()" class="bg-transparent border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 px-4 py-2 outline-none focus:ring-0">
+        <option th:each="m : ${#numbers.sequence(1, 12)}" 
+                th:value="${m}" 
+                th:text="${{'','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'}[m]}"
+                th:selected="${m == currentMonth}"></option>
+      </select>
+      <div class="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+      <select name="year" @change="$el.form.submit()" class="bg-transparent border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 px-4 py-2 outline-none focus:ring-0">
+        <option th:each="y : ${#numbers.sequence(2023, 2026)}" 
+                th:value="${y}" 
+                th:text="${y}"
+                th:selected="${y == currentYear}"></option>
+      </select>
+    </form>
+
+    <button x-show="tab === 'employees'" @click="resetEmployeeForm()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:scale-105 flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+      Nuevo Empleado
+    </button>
+  </div>
+
+  <!-- TAB: Employees -->
+  <div x-show="tab === 'employees'" x-transition class="space-y-4">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700">
+            <th class="text-left text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-4">Empleado</th>
+            <th class="text-left text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-4">ID</th>
+            <th class="text-left text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-4">Cargo</th>
+            <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-4">Salario Base</th>
+            <th class="text-center text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-4">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50 dark:divide-slate-700/50">
+          <tr th:each="emp : ${employees}" class="hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
+            <td class="px-6 py-4 font-bold text-slate-800 dark:text-white" th:text="${emp.fullName}"></td>
+            <td class="px-6 py-4 text-sm text-slate-500" th:text="${emp.documentId}"></td>
+            <td class="px-6 py-4 text-sm text-slate-500" th:text="${emp.position}"></td>
+            <td class="px-6 py-4 text-right font-black text-slate-700 dark:text-slate-200" th:text="'$' + ${#numbers.formatInteger(emp.baseSalary, 1, 'POINT')}"></td>
+            <td class="px-6 py-4 flex items-center justify-center gap-2">
+              <button @click="openEditModal($el.dataset)" 
+                      th:data-id="${emp.id}"
+                      th:data-full-name="${emp.fullName}"
+                      th:data-document-id="${emp.documentId}"
+                      th:data-position="${emp.position}"
+                      th:data-base-salary="${emp.baseSalary}"
+                      th:data-user-id="${emp.systemUser != null ? emp.systemUser.id : ''}"
+                      class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors" title="Editar">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </button>
+              <form th:action="@{/nomina/empleado/eliminar/{id}(id=${emp.id})}" method="post" onsubmit="return confirm('¿Está seguro de eliminar a este empleado?')">
+                <button type="submit" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Eliminar">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: Liquidate -->
+  <div x-show="tab === 'liquidate'" x-transition>
+    <form th:action="@{/nomina/liquidar}" method="post">
+      <input type="hidden" name="period" th:value="${currentPeriod}">
+      
+      <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-x-auto mb-6">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700">
+              <th class="text-left text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-4">Empleado</th>
+              <th class="text-center text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4">Días</th>
+              <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4">Sueldo Prop.</th>
+              <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4">Aux. Transp</th>
+              <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4">Comisiones</th>
+              <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4 text-red-500">Salud/Pens</th>
+              <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4">Libranza/Emb</th>
+              <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4">Total Dev.</th>
+              <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4">Total Ded.</th>
+              <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-4 font-black">Neto</th>
+              <th class="text-center text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4">Acción</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-50 dark:divide-slate-700/50">
+            <th:block th:each="item, stat : ${liquidationItems}">
+              <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-700/30" 
+                  th:data-base-salary="${item.baseSalary}"
+                  th:data-days-worked="${item.daysWorked}"
+                  th:data-smmlv="${settings.smmlv}"
+                  th:data-aux-trans="${settings.transportAllowance}"
+                  th:data-health-pct="${settings.healthPercentage}"
+                  th:data-pension-pct="${settings.pensionPercentage}"
+                  x-data="{ 
+                  commissions: 0, 
+                  libranza: 0, 
+                  embargo: 0,
+                  baseSalary: parseFloat($el.dataset.baseSalary || 0),
+                  daysWorked: parseInt($el.dataset.daysWorked || 0),
+                  smmlv: parseFloat($el.dataset.smmlv || 0),
+                  auxTrans: parseFloat($el.dataset.auxTrans || 0),
+                  healthPct: parseFloat($el.dataset.healthPct || 0),
+                  pensionPct: parseFloat($el.dataset.pensionPct || 0),
+                  get propSalary() { return (this.baseSalary / 30) * this.daysWorked; },
+                  get transport() { return (this.baseSalary <= (this.smmlv * 2)) ? ((this.auxTrans / 30) * this.daysWorked) : 0; },
+                  get ibc() { return this.propSalary + (parseFloat(this.commissions) || 0); },
+                  get health() { return this.ibc * (this.healthPct / 100); },
+                  get pension() { return this.ibc * (this.pensionPct / 100); },
+                  get earnings() { return this.propSalary + this.transport + (parseFloat(this.commissions) || 0); },
+                  get deductions() { return this.health + this.pension + (parseFloat(this.libranza) || 0) + (parseFloat(this.embargo) || 0); },
+                  get net() { return this.earnings - this.deductions; }
+                }">
+                <input type="hidden" th:name="'items[' + ${stat.index} + '].employeeId'" th:value="${item.employeeId}">
+                <input type="hidden" th:name="'items[' + ${stat.index} + '].employeeName'" th:value="${item.employeeName}">
+                <input type="hidden" th:name="'items[' + ${stat.index} + '].baseSalary'" th:value="${item.baseSalary}">
+                <input type="hidden" th:name="'items[' + ${stat.index} + '].daysWorked'" :value="daysWorked">
+                <input type="hidden" th:name="'items[' + ${stat.index} + '].proportionalSalary'" :value="propSalary">
+                <input type="hidden" th:name="'items[' + ${stat.index} + '].transportAllowance'" :value="transport">
+                <input type="hidden" th:name="'items[' + ${stat.index} + '].health'" :value="health">
+                <input type="hidden" th:name="'items[' + ${stat.index} + '].pension'" :value="pension">
+                <input type="hidden" th:name="'items[' + ${stat.index} + '].totalEarnings'" :value="earnings">
+                <input type="hidden" th:name="'items[' + ${stat.index} + '].totalDeductions'" :value="deductions">
+                <input type="hidden" th:name="'items[' + ${stat.index} + '].netPay'" :value="net">
+
+                <td class="px-6 py-4">
+                  <div class="font-bold text-slate-800 dark:text-white" th:text="${item.employeeName}"></div>
+                  <div class="text-[10px] text-slate-400 font-medium uppercase" th:text="'Sueldo: $' + ${#numbers.formatInteger(item.baseSalary, 1, 'POINT')}"></div>
+                </td>
+                <td class="px-4 py-4 text-center">
+                  <input type="number" x-model="daysWorked" class="w-12 text-center bg-slate-50 dark:bg-slate-900 border-none rounded-lg p-1 text-sm font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 transition-all outline-none">
+                </td>
+                <td class="px-4 py-4 text-right font-semibold text-slate-700 dark:text-slate-300" x-text="formatMoney(propSalary)"></td>
+                <td class="px-4 py-4 text-right text-emerald-600 font-semibold" x-text="formatMoney(transport)"></td>
+                <td class="px-4 py-4 text-right">
+                  <input type="number" th:name="'items[' + ${stat.index} + '].commissions'" x-model="commissions" class="w-24 text-right bg-blue-50 dark:bg-blue-900/20 border-none rounded-lg p-1 text-sm font-bold text-blue-700">
+                </td>
+                <td class="px-4 py-4 text-right">
+                   <div class="text-[10px] text-red-500 font-black" x-text="'S: -' + formatMoney(health)"></div>
+                   <div class="text-[10px] text-red-500 font-black" x-text="'P: -' + formatMoney(pension)"></div>
+                </td>
+                <td class="px-4 py-4 text-right space-y-1">
+                  <input type="number" th:name="'items[' + ${stat.index} + '].libranza'" x-model="libranza" placeholder="Libranza" class="w-20 text-right bg-slate-50 dark:bg-slate-700 border-none rounded-md p-1 text-[10px] outline-none">
+                  <input type="number" th:name="'items[' + ${stat.index} + '].embargo'" x-model="embargo" placeholder="Embargo" class="w-20 text-right bg-slate-50 dark:bg-slate-700 border-none rounded-md p-1 text-[10px] outline-none">
+                </td>
+                <td class="px-4 py-4 text-right font-bold text-slate-700 dark:text-slate-300" x-text="formatMoney(earnings)"></td>
+                <td class="px-4 py-4 text-right font-bold text-red-600" x-text="formatMoney(deductions)"></td>
+                <td class="px-6 py-4 text-right">
+                  <div class="text-lg font-black text-blue-600 dark:text-blue-400" x-text="formatMoney(net)"></div>
+                </td>
+                <td class="px-4 py-4 text-center">
+                  <button type="button" th:x-on:click="|liquidarIndividual($data, ${item.employeeId}, '${item.employeeName}', ${item.baseSalary}, '${currentPeriod}')|" class="p-2 bg-blue-100 hover:bg-blue-600 text-blue-600 hover:text-white rounded-lg transition-all" title="Liquidar solo a este empleado">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  </button>
+                </td>
+              </tr>
+            </th:block>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="flex justify-end">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-10 py-4 rounded-2xl shadow-xl shadow-blue-500/30 transition-all hover:scale-105">
+          Liquidar Todo el Mes
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- TAB: History -->
+  <div x-show="tab === 'history'" x-transition>
+    <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700">
+            <th class="text-left text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-4">Periodo</th>
+            <th class="text-left text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-4">Empleado</th>
+            <th class="text-center text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4">Días</th>
+            <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4">Devengado</th>
+            <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4 text-red-500">Deducido</th>
+            <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-4">Neto</th>
+            <th class="text-right text-xs font-bold text-slate-400 uppercase tracking-widest px-6 py-4">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50 dark:divide-slate-700/50">
+          <tr th:each="rec : ${history}" class="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
+            <td class="px-6 py-4 font-bold text-slate-600 dark:text-slate-400" th:text="${rec.period}"></td>
+            <td class="px-6 py-4 font-bold text-slate-800 dark:text-white" th:text="${rec.employee.fullName}"></td>
+            <td class="px-4 py-4 text-center text-sm" th:text="${rec.daysWorked}"></td>
+            <td class="px-4 py-4 text-right font-semibold text-emerald-600" th:text="'$' + ${#numbers.formatInteger(rec.totalEarnings, 1, 'POINT')}"></td>
+            <td class="px-4 py-4 text-right font-semibold text-red-500" th:text="'$' + ${#numbers.formatInteger(rec.totalDeductions, 1, 'POINT')}"></td>
+            <td class="px-4 py-4 text-right font-black text-blue-600 dark:text-blue-400" th:text="'$' + ${#numbers.formatInteger(rec.netSalary, 1, 'POINT')}"></td>
+            <td class="px-6 py-4 text-right flex items-center justify-end gap-2">
+              <a th:href="@{/nomina/exportar/{id}(id=${rec.id})}" class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors" title="PDF">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              </a>
+              <form th:action="@{/nomina/eliminar/{id}(id=${rec.id})}" method="post" onsubmit="return confirm('¿Eliminar registro?')">
+                <button type="submit" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: Settings -->
+  <div x-show="tab === 'settings'" x-transition>
+    <div class="max-w-2xl mx-auto bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
+      <div class="flex items-center gap-4 mb-8">
+        <div class="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-800 dark:text-white">Parámetros de Nómina</h3>
+          <p class="text-sm text-slate-500">Define los valores fijos de ley para los cálculos automáticos.</p>
+        </div>
+      </div>
+
+      <form th:action="@{/nomina/settings}" method="post" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2" x-data="{ 
+              raw: '0', 
+              get display() { 
+                let val = Math.round(parseFloat(this.raw) || 0);
+                return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+              },
+              set display(val) { this.raw = val.replace(/\D/g, '') }
+          }" th:x-init="|raw = '${settings.smmlv}'|">
+            <label class="block text-xs font-black text-slate-400 uppercase tracking-widest">SMMLV ($)</label>
+            <input type="text" x-model="display" required class="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-4 text-slate-700 dark:text-white font-bold focus:ring-2 focus:ring-blue-500 transition-all outline-none">
+            <input type="hidden" name="smmlv" :value="raw">
+          </div>
+          <div class="space-y-2" x-data="{ 
+              raw: '0', 
+              get display() { 
+                let val = Math.round(parseFloat(this.raw) || 0);
+                return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+              },
+              set display(val) { this.raw = val.replace(/\D/g, '') }
+          }" th:x-init="|raw = '${settings.transportAllowance}'|">
+            <label class="block text-xs font-black text-slate-400 uppercase tracking-widest">Auxilio Transporte ($)</label>
+            <input type="text" x-model="display" required class="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-4 text-slate-700 dark:text-white font-bold focus:ring-2 focus:ring-blue-500 transition-all outline-none">
+            <input type="hidden" name="transportAllowance" :value="raw">
+          </div>
+          <div class="space-y-2">
+            <label class="block text-xs font-black text-slate-400 uppercase tracking-widest">Salud (%)</label>
+            <input type="number" step="0.01" name="healthPercentage" th:value="${settings.healthPercentage}" required class="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-4 text-slate-700 dark:text-white font-bold focus:ring-2 focus:ring-blue-500 transition-all outline-none">
+          </div>
+          <div class="space-y-2">
+            <label class="block text-xs font-black text-slate-400 uppercase tracking-widest">Pensión (%)</label>
+            <input type="number" step="0.01" name="pensionPercentage" th:value="${settings.pensionPercentage}" required class="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-4 text-slate-700 dark:text-white font-bold focus:ring-2 focus:ring-blue-500 transition-all outline-none">
+          </div>
+        </div>
+
+        <div class="pt-6 border-t border-slate-50 dark:border-slate-700 flex justify-end">
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-blue-500/20 transition-all hover:scale-105">
+            Guardar Cambios
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Nuevo Empleado -->
+  <div x-show="showEmployeeModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-cloak x-transition>
+    <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-slate-700" @click.away="showEmployeeModal = false">
+      <form th:action="@{/nomina/empleado}" method="post" class="p-8 space-y-6">
+        <input type="hidden" name="id" x-model="editingEmployee.id">
+        <h3 class="text-xl font-bold text-slate-900 dark:text-white" x-text="editingEmployee.id ? 'Editar Empleado' : 'Registrar Nuevo Empleado'"></h3>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Vincular a Usuario</label>
+            <select name="userId" x-model="editingEmployee.userId" @change="if(!editingEmployee.id) editingEmployee.fullName = $event.target.options[$event.target.selectedIndex].text" class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all font-medium text-slate-700 dark:text-white">
+              <option value="">(Sin vincular usuario)</option>
+              <option th:each="u : ${users}" th:value="${u.id}" th:text="${u.fullName}"></option>
+            </select>
+            <p class="text-[10px] text-slate-400 mt-1">Selecciona un usuario registrado para importar su nombre automáticamente.</p>
+          </div>
+ 
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Nombre Completo</label>
+            <input type="text" name="fullName" required x-model="editingEmployee.fullName" class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all font-medium text-slate-700 dark:text-white">
+          </div>
+ 
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Documento ID</label>
+              <input type="text" name="documentId" required x-model="editingEmployee.documentId" class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all font-medium text-slate-700 dark:text-white">
+            </div>
+            <div x-data="{ 
+                get display() { 
+                  let val = parseFloat(editingEmployee.baseSalary || 0);
+                  let rounded = Math.round(val);
+                  if (rounded === 0) return '';
+                  return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                },
+                set display(val) { editingEmployee.baseSalary = val.replace(/\D/g, '') }
+            }">
+              <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Salario Base ($)</label>
+              <input type="text" x-model="display" required placeholder="Ej: 1.300.000" class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all font-bold text-blue-600">
+              <input type="hidden" name="baseSalary" :value="editingEmployee.baseSalary || 0">
+            </div>
+          </div>
+ 
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Cargo / Puesto</label>
+            <input type="text" name="position" x-model="editingEmployee.position" class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 outline-none transition-all font-medium text-slate-700 dark:text-white">
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-700">
+          <button type="button" @click="showEmployeeModal = false" class="px-6 py-2.5 font-bold text-slate-500 hover:bg-slate-50 rounded-xl transition-colors">Cancelar</button>
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-2.5 rounded-xl shadow-lg shadow-blue-500/20 transition-all">Registrar Empleado</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function payrollApp() {
+      return {
+        tab: '[[${currentTab}]]',
+        showEmployeeModal: false,
+        editingEmployee: { id: null, fullName: '', documentId: '', position: '', baseSalary: '', userId: '' },
+        
+        openEditModal(emp) {
+          this.editingEmployee = { ...emp };
+          this.showEmployeeModal = true;
+        },
+        
+        resetEmployeeForm() {
+          this.editingEmployee = { id: null, fullName: '', documentId: '', position: '', baseSalary: '', userId: '' };
+          this.showEmployeeModal = true;
+        },
+        
+        formatMoney(value) {
+          return '$' + Math.round(value || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        },
+        
+        liquidarIndividual(data, empId, empName, baseSal, period) {
+          if(!confirm('¿Liquidar solo a ' + empName + '?')) return;
+          
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = '/nomina/liquidar-individual';
+          
+          const fields = {
+            employeeId: empId,
+            employeeName: empName,
+            baseSalary: baseSal,
+            daysWorked: data.daysWorked,
+            proportionalSalary: data.propSalary,
+            transportAllowance: data.transport,
+            commissions: data.commissions,
+            health: data.health,
+            pension: data.pension,
+            libranza: data.libranza,
+            embargo: data.embargo,
+            totalEarnings: data.earnings,
+            totalDeductions: data.deductions,
+            netPay: data.net,
+            period: period
+          };
+          
+          for (const key in fields) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = fields[key];
+            form.appendChild(input);
+          }
+          
+          // CSRF token if needed (Spring Security)
+          const csrf = document.querySelector('meta[name=\'_csrf\']');
+          if (csrf) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_csrf';
+            csrfInput.value = csrf.content;
+            form.appendChild(csrfInput);
+          }
+          
+          document.body.appendChild(form);
+          form.submit();
+        }
+      }
+    }
+  </script>
+
+</div>
+</body>
+</html>
