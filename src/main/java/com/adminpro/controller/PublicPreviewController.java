@@ -26,7 +26,8 @@ public class PublicPreviewController {
     private final PreviewTokenService tokenService;
     private final DocumentRepository documentRepository;
 
-    private static final String UPLOAD_DIR = "uploads/documentos/";
+    @org.springframework.beans.factory.annotation.Value("${upload.dir:uploads/documentos/}")
+    private String uploadDir;
 
     @GetMapping
     public ResponseEntity<Resource> getPublicPreview(@RequestParam String token) {
@@ -40,7 +41,7 @@ public class PublicPreviewController {
             return ResponseEntity.notFound().build();
         }
 
-        Path filePath = Paths.get(UPLOAD_DIR).resolve(doc.getFilePath());
+        Path filePath = Paths.get(uploadDir).resolve(doc.getFilePath());
         Resource resource = new FileSystemResource(filePath);
 
         if (!resource.exists()) {

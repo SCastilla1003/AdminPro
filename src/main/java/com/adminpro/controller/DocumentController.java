@@ -43,7 +43,8 @@ public class DocumentController {
     @Value("${preview.base-url}")
     private String previewBaseUrl;
 
-    private static final String UPLOAD_DIR = "uploads/documentos/";
+    @Value("${upload.dir:uploads/documentos/}")
+    private String uploadDir;
 
     @GetMapping
     public String index(@RequestParam(required = false) Long folderId, Model model) {
@@ -119,7 +120,7 @@ public class DocumentController {
         }
 
         try {
-            Path uploadPath = Paths.get(UPLOAD_DIR);
+            Path uploadPath = Paths.get(uploadDir);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
@@ -172,7 +173,7 @@ public class DocumentController {
         Document doc = documentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Documento no encontrado"));
 
-        Path filePath = Paths.get(UPLOAD_DIR).resolve(doc.getFilePath());
+        Path filePath = Paths.get(uploadDir).resolve(doc.getFilePath());
         Resource resource = new FileSystemResource(filePath);
 
         if (!resource.exists()) {
@@ -206,7 +207,7 @@ public class DocumentController {
         Document doc = documentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Documento no encontrado"));
 
-        Path filePath = Paths.get(UPLOAD_DIR).resolve(doc.getFilePath());
+        Path filePath = Paths.get(uploadDir).resolve(doc.getFilePath());
         Resource resource = new FileSystemResource(filePath);
 
         if (!resource.exists()) {
@@ -257,7 +258,7 @@ public class DocumentController {
             folderId = doc.getFolder() != null ? doc.getFolder().getId() : null;
             if (doc.getFilePath() != null) {
                 try {
-                    Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(doc.getFilePath()));
+                    Files.deleteIfExists(Paths.get(uploadDir).resolve(doc.getFilePath()));
                 } catch (IOException ignored) {}
             }
             activityLog.log("DOCUMENTS", "DELETE", "Documento '" + doc.getName() + "' eliminado");
@@ -266,6 +267,7 @@ public class DocumentController {
         ra.addFlashAttribute("successMsg", "Documento eliminado.");
         return "redirect:/documentos" + (folderId != null ? "?folderId=" + folderId : "");
     }
+
 
     @GetMapping("/generar-token/{id}")
     @ResponseBody
