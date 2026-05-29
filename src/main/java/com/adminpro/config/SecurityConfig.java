@@ -125,7 +125,7 @@ public class SecurityConfig {
             .headers(headers -> headers
                 .frameOptions(frame -> frame.disable())
                 .contentSecurityPolicy(csp -> csp
-                    .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com " + onlyOfficeUrl + "; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com " + onlyOfficeUrl + "; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: " + onlyOfficeUrl + "; connect-src 'self' wss: ws: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com " + onlyOfficeUrl + "; frame-src 'self' " + onlyOfficeUrl + " https://view.officeapps.live.com; frame-ancestors 'self';")
+                    .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com " + onlyOfficeUrl + "; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com " + onlyOfficeUrl + "; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: " + onlyOfficeUrl + " https://view.officeapps.live.com; connect-src 'self' wss: ws: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com " + onlyOfficeUrl + " https://view.officeapps.live.com; frame-src 'self' " + onlyOfficeUrl + " https://view.officeapps.live.com; frame-ancestors 'self';")
                 )
             );
 
