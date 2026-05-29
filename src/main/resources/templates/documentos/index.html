@@ -105,9 +105,9 @@
         </div>
 
         <!-- List View -->
-        <div th:if="${!documents.isEmpty()}" x-show="viewMode === 'list'" class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div th:if="${!documents.isEmpty()}" x-show="viewMode === 'list'" class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-visible">
             <table class="w-full text-left">
-                <thead>
+                <thead class="bg-slate-50/50 border-b border-slate-100 rounded-t-2xl">
                     <tr class="bg-slate-50/50 border-b border-slate-100">
                         <th class="px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-widest">Nombre</th>
                         <th class="px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-widest w-24">Tipo</th>
