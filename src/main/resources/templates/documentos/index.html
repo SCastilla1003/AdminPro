@@ -486,8 +486,7 @@
 
                     if (typeof DocsAPI === 'undefined') {
                         this.viewerError = true;
-                        this.showViewer = true;
-                        console.error('ONLYOFFICE API no cargada. Verifica ONLYOFFICE_URL en Railway.');
+                        console.error('DocsAPI no disponible. La URL del script ONLYOFFICE no cargó correctamente.');
                         return;
                     }
 
