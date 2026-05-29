@@ -1,5 +1,7 @@
 package com.adminpro.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -7,17 +9,27 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 @ControllerAdvice
 public class GlobalModelAdvice {
 
-    @Value("${onlyoffice.document-server-url:https://onlinedocs.onlyoffice.com/}")
+    private static final Logger log = LoggerFactory.getLogger(GlobalModelAdvice.class);
+
+    @Value("${onlyoffice.document-server-url:#{null}}")
     private String onlyOfficeUrl;
 
     @ModelAttribute("onlyOfficeUrl")
     public String getOnlyOfficeUrl() {
-        if (onlyOfficeUrl == null || onlyOfficeUrl.isBlank() || onlyOfficeUrl.equals("${ONLYOFFICE_URL}")) {
+        log.info("ONLYOFFICE URL from @Value: '{}'", onlyOfficeUrl);
+        if (onlyOfficeUrl == null || onlyOfficeUrl.isBlank()) {
+            log.warn("ONLYOFFICE URL is null/blank, DocsAPI script will not be loaded");
             return null;
         }
-        if (onlyOfficeUrl.endsWith("/")) {
-            return onlyOfficeUrl.substring(0, onlyOfficeUrl.length() - 1);
+        String url = onlyOfficeUrl.trim();
+        if (url.startsWith("${") && url.endsWith("}")) {
+            log.warn("ONLYOFFICE URL is unresolved placeholder: {}", url);
+            return null;
         }
-        return onlyOfficeUrl;
+        if (url.endsWith("/")) {
+            url = url.substring(0, url.length() - 1);
+        }
+        log.info("ONLYOFFICE URL resolved to: {}", url);
+        return url;
     }
 }

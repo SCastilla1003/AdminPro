@@ -41,7 +41,7 @@ public class DocumentController {
     private final com.adminpro.service.PreviewTokenService tokenService;
     private final com.adminpro.service.OnlyOfficeService onlyOfficeService;
 
-    @Value("${preview.base-url}")
+    @Value("${preview.base-url:http://localhost:25565}")
     private String previewBaseUrl;
 
     @Value("${upload.dir:uploads/documentos/}")

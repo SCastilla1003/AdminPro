@@ -35,7 +35,7 @@ public class OnlyOfficeController {
     @Value("${upload.dir:uploads/documentos/}")
     private String uploadDir;
 
-    @Value("${preview.base-url}")
+    @Value("${preview.base-url:http://localhost:25565}")
     private String previewBaseUrl;
 
     @GetMapping("/config/{token}")
@@ -50,8 +50,13 @@ public class OnlyOfficeController {
             return ResponseEntity.notFound().build();
         }
 
-        String ext = doc.getFilePath().contains(".")
-                ? doc.getFilePath().substring(doc.getFilePath().lastIndexOf(".") + 1).toLowerCase()
+        String filePath = doc.getFilePath();
+        if (filePath == null || filePath.isBlank()) {
+            return ResponseEntity.status(500).body(Map.of("error", "Document has no file path"));
+        }
+
+        String ext = filePath.contains(".")
+                ? filePath.substring(filePath.lastIndexOf(".") + 1).toLowerCase()
                 : "";
 
         String documentType = switch (ext) {
