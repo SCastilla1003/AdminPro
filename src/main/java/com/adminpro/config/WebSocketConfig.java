@@ -5,19 +5,33 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 
 @Configuration
 @EnableWebSocketMessageBroker
-public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSocketConfigurer {
+
+    private final OoProxyWebSocketHandler ooProxyWebSocketHandler;
+
+    public WebSocketConfig(OoProxyWebSocketHandler ooProxyWebSocketHandler) {
+        this.ooProxyWebSocketHandler = ooProxyWebSocketHandler;
+    }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic", "/queue"); // Prefijo para mensajes de salida
-        config.setApplicationDestinationPrefixes("/app"); // Prefijo para mensajes de entrada
+        config.enableSimpleBroker("/topic", "/queue");
+        config.setApplicationDestinationPrefixes("/app");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws-chat").withSockJS(); // Endpoint de conexión
+        registry.addEndpoint("/ws-chat").withSockJS();
+    }
+
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        registry.addHandler(ooProxyWebSocketHandler, "/oo-proxy/**")
+                .setAllowedOrigins("*");
     }
 }
