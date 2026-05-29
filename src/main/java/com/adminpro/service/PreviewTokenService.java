@@ -15,7 +15,6 @@ public class PreviewTokenService {
     public String generateToken(Long documentId) {
         cleanExpiredTokens();
         
-        // Si ya existe un token válido para este documento, reutilízalo
         String existingToken = docToToken.get(documentId);
         if (existingToken != null) {
             TokenData data = tokens.get(existingToken);
@@ -26,6 +25,16 @@ public class PreviewTokenService {
 
         String token = UUID.randomUUID().toString();
         long expiryTime = System.currentTimeMillis() + 300000; // 5 minutes
+        tokens.put(token, new TokenData(documentId, expiryTime));
+        docToToken.put(documentId, token);
+        return token;
+    }
+
+    public String generateLongLivedToken(Long documentId) {
+        cleanExpiredTokens();
+        
+        String token = UUID.randomUUID().toString();
+        long expiryTime = System.currentTimeMillis() + 43200000; // 12 hours
         tokens.put(token, new TokenData(documentId, expiryTime));
         docToToken.put(documentId, token);
         return token;

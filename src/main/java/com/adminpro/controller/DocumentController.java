@@ -340,7 +340,7 @@ public class DocumentController {
     @GetMapping("/generar-token-onlyoffice/{id}")
     @ResponseBody
     public java.util.Map<String, String> generateOnlyOfficeToken(@PathVariable Long id) {
-        String token = tokenService.generateToken(id);
+        String token = tokenService.generateLongLivedToken(id);
         java.util.Map<String, String> response = new java.util.HashMap<>();
         response.put("token", token);
         return response;
