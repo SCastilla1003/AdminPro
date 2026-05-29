@@ -145,7 +145,7 @@
                                     class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"/></svg>
                             </button>
-                            <div x-show="openMenu == ${doc.id}" x-cloak
+                            <div :class="{'hidden': openMenu != ${doc.id}}"
                                  class="absolute right-0 top-full mt-1 z-50 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5">
                                 <button type="button" th:if="${doc.type != 'Otro' or doc.filePath != null}"
                                         th:attr="data-url=@{/documentos/ver/{id}(id=${doc.id})}, data-name=${doc.name}, data-type=${doc.type}, data-size=${doc.size}"
