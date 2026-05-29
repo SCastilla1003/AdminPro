@@ -88,7 +88,8 @@ public class OnlyOfficeController {
 
         Map<String, Object> document = new HashMap<>();
         document.put("fileType", ext);
-        document.put("key", doc.getId() + "_" + doc.getFilePath());
+        long lastModified = Files.getLastModifiedTime(Paths.get(uploadDir).resolve(filePath)).toMillis();
+        document.put("key", doc.getId() + "_" + filePath + "_" + lastModified);
         document.put("title", doc.getName());
         document.put("url", baseUrlForServer + "/api/onlyoffice/download/" + token);
 
