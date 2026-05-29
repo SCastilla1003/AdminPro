@@ -10,15 +10,19 @@
 <body>
 <div th:fragment="chat-content" class="h-full flex flex-col">
 
-  <div class="flex-1 flex overflow-hidden bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm transition-colors">
+  <div class="flex-1 flex overflow-hidden bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm transition-colors relative" x-data="{ chatSidebarOpen: false }">
 
     <!-- Sidebar: Canales + Usuarios -->
-    <div class="w-64 border-r border-slate-100 dark:border-slate-700 flex flex-col bg-slate-50/50 dark:bg-slate-800/80">
-        <div class="p-5 border-b border-slate-100 dark:border-slate-700">
+    <div class="w-64 border-r border-slate-100 dark:border-slate-700 flex flex-col bg-slate-50/50 dark:bg-slate-800/80 transition-transform duration-300 z-50 fixed inset-y-0 left-0 lg:relative lg:z-auto" 
+         :class="chatSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
             <h3 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Canales</h3>
+            <button @click="chatSidebarOpen = false" class="lg:hidden w-6 h-6 flex items-center justify-center rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 transition-all">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
         </div>
         <div class="flex-1 overflow-y-auto p-2 space-y-1">
-            <div @click="selectChannel('general')"
+            <div @click="selectChannel('general'); chatSidebarOpen = false"
                  :class="currentChannel === 'general' && !selectedUser ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'"
                  class="px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-2 cursor-pointer transition-all">
                 <span class="text-blue-200">#</span> general
@@ -30,7 +34,7 @@
         </div>
         <div class="flex-1 overflow-y-auto p-2 space-y-1">
             <template x-for="user in users" :key="user.username">
-                <div @click="selectUser(user)"
+                <div @click="selectUser(user); chatSidebarOpen = false"
                      :class="selectedUser && selectedUser.username === user.username ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'"
                      class="px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-2 cursor-pointer transition-all">
                     <span class="w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></span>
@@ -45,6 +49,9 @@
 
         <!-- Chat Header -->
         <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
+            <button @click="chatSidebarOpen = !chatSidebarOpen" class="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all flex-shrink-0">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+            </button>
             <template x-if="selectedUser">
                 <div class="flex items-center gap-3">
                     <span class="w-3 h-3 rounded-full bg-green-400"></span>
