@@ -39,12 +39,16 @@ public class DocumentController {
     private final com.adminpro.service.ActivityLogService activityLog;
     private final com.adminpro.service.NotificationService notificationService;
     private final com.adminpro.service.PreviewTokenService tokenService;
+    private final com.adminpro.service.OnlyOfficeService onlyOfficeService;
 
     @Value("${preview.base-url}")
     private String previewBaseUrl;
 
     @Value("${upload.dir:uploads/documentos/}")
     private String uploadDir;
+
+    @Value("${onlyoffice.document-server-url:https://onlinedocs.onlyoffice.com/}")
+    private String onlyOfficeUrl;
 
     @GetMapping
     public String index(@RequestParam(required = false) Long folderId, Model model) {
@@ -74,6 +78,7 @@ public class DocumentController {
         model.addAttribute("breadcrumbs", breadcrumbs);
         model.addAttribute("subfolders", subfolders);
         model.addAttribute("documents", documents);
+        model.addAttribute("onlyOfficeUrl", onlyOfficeUrl.endsWith("/") ? onlyOfficeUrl.substring(0, onlyOfficeUrl.length() - 1) : onlyOfficeUrl);
         return "documentos/index";
     }
 
@@ -166,6 +171,56 @@ public class DocumentController {
         }
 
         return "redirect:/documentos" + (folderId != null ? "?folderId=" + folderId : "");
+    }
+
+    @PostMapping("/crear-oficina")
+    @ResponseBody
+    public java.util.Map<String, Object> createOfficeDocument(
+            @RequestParam String name,
+            @RequestParam String type,
+            @RequestParam(required = false) Long folderId,
+            Authentication authentication) {
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+
+        try {
+            String ext = switch (type.toLowerCase()) {
+                case "word" -> ".docx";
+                case "excel" -> ".xlsx";
+                case "powerpoint" -> ".pptx";
+                default -> ".docx";
+            };
+
+            String filename = UUID.randomUUID() + ext;
+            onlyOfficeService.createBlankDocument(filename, ext.substring(1));
+
+            Document doc = new Document();
+            doc.setName(name + ext);
+            doc.setType(detectFileType(ext, type));
+            doc.setSize("0 B");
+            doc.setFilePath(filename);
+
+            if (folderId != null) {
+                folderRepository.findById(folderId).ifPresent(doc::setFolder);
+            }
+
+            userRepository.findByUsername(authentication.getName()).ifPresent(doc::setUploadedBy);
+
+            documentRepository.save(doc);
+            activityLog.log("DOCUMENTS", "CREATE", "Documento Office '" + name + "' creado");
+            notificationService.createNotification(authentication.getName(), "Documento '" + name + "' creado correctamente.", "SYSTEM", "/documentos");
+
+            String token = tokenService.generateToken(doc.getId());
+
+            response.put("success", true);
+            response.put("documentId", doc.getId());
+            response.put("token", token);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+        }
+
+        return response;
     }
 
     @GetMapping("/ver/{id}")

@@ -41,6 +41,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/api/onlyoffice/callback")
+            )
             .authenticationProvider(authenticationProvider())
             .authorizeHttpRequests(requests -> requests
                 // Recursos públicos
@@ -48,6 +51,7 @@ public class SecurityConfig {
                 .requestMatchers("/login").permitAll()
                 .requestMatchers("/recuperar-password", "/restablecer-password").permitAll()
                 .requestMatchers("/api/public/preview/**").permitAll()
+                .requestMatchers("/api/onlyoffice/**").permitAll()
                 .requestMatchers("/fuera-de-horario").authenticated()
 
                 // Dashboard: cualquier autenticado
@@ -114,7 +118,10 @@ public class SecurityConfig {
                 .accessDeniedPage("/acceso-denegado")
             )
             .headers(headers -> headers
-                .frameOptions(frame -> frame.sameOrigin())
+                .frameOptions(frame -> frame.disable())
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives("frame-ancestors 'self' https://onlinedocs.onlyoffice.com;")
+                )
             );
 
         return http.build();
