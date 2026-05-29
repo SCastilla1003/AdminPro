@@ -58,6 +58,7 @@ public class OnlyOfficeProxyController {
 
         log.info("Proxying: {} -> {} (base: {})", requestUri, targetUrl, baseUrl);
 
+        try {
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .uri(URI.create(targetUrl))
                     .timeout(Duration.ofSeconds(30));
