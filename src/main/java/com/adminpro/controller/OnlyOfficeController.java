@@ -7,6 +7,8 @@ import com.adminpro.service.OnlyOfficeService;
 import com.adminpro.service.PreviewTokenService;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -27,6 +29,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OnlyOfficeController {
 
+    private static final Logger log = LoggerFactory.getLogger(OnlyOfficeController.class);
+
     private final DocumentRepository documentRepository;
     private final UserRepository userRepository;
     private final OnlyOfficeService onlyOfficeService;
@@ -40,19 +44,27 @@ public class OnlyOfficeController {
 
     @GetMapping("/config/{token}")
     public ResponseEntity<Map<String, Object>> getConfig(@PathVariable String token) {
+        try {
+            log.info("Config requested with token: {}", token);
+
         Long docId = tokenService.validateToken(token);
         if (docId == null) {
+            log.warn("Invalid token: {}", token);
             return ResponseEntity.status(403).build();
         }
 
         Document doc = documentRepository.findById(docId).orElse(null);
         if (doc == null) {
+            log.warn("Document not found for id: {}", docId);
             return ResponseEntity.notFound().build();
         }
 
         String filePath = doc.getFilePath();
         if (filePath == null || filePath.isBlank()) {
-            return ResponseEntity.status(500).body(Map.of("error", "Document has no file path"));
+            log.error("Document {} has empty filePath", docId);
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Document has no file path");
+            return ResponseEntity.status(500).body(error);
         }
 
         String ext = filePath.contains(".")
@@ -96,6 +108,12 @@ public class OnlyOfficeController {
         }
 
         return ResponseEntity.ok(config);
+        } catch (Exception e) {
+            log.error("Error building ONLYOFFICE config for token {}: {}", token, e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", e.getMessage() != null ? e.getMessage() : "Unknown error");
+            return ResponseEntity.status(500).body(error);
+        }
     }
 
     @GetMapping("/download/{token}")
