@@ -333,6 +333,7 @@ public class DocumentController {
 
         java.util.Map<String, String> response = new java.util.HashMap<>();
         response.put("url", microsoftUrl);
+        response.put("publicUrl", publicUrl);
         return response;
     }
 

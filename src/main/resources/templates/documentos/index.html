@@ -522,6 +522,8 @@
                 this.viewerError = false;
                 this.showViewer = true;
 
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
                 if (['Word', 'Excel', 'PowerPoint'].includes(type)) {
                     this.isConverting = true;
                     this.viewerUrl = '';
@@ -533,6 +535,22 @@
                         this.viewerUrl = data.url;
                     } catch (e) {
                         console.error('Error cargando preview de Office:', e);
+                        this.viewerError = true;
+                    } finally {
+                        this.isConverting = false;
+                    }
+                } else if (type === 'PDF' && isMobile) {
+                    this.isConverting = true;
+                    this.viewerUrl = '';
+                    try {
+                        const id = url.substring(url.lastIndexOf('/') + 1);
+                        const response = await fetch(`/documentos/generar-token/${id}`, { credentials: 'include' });
+                        if (!response.ok) throw new Error('Error generando token');
+                        const data = await response.json();
+                        const googleDocsUrl = 'https://docs.google.com/gview?url=' + encodeURIComponent(data.publicUrl) + '&embedded=true';
+                        this.viewerUrl = googleDocsUrl;
+                    } catch (e) {
+                        console.error('Error cargando preview de PDF en móvil:', e);
                         this.viewerError = true;
                     } finally {
                         this.isConverting = false;
