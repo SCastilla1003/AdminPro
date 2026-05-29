@@ -479,11 +479,17 @@
                     formData.append('folderId', currentFolderId);
                 }
 
+                const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
                 try {
                     const response = await fetch('/documentos/crear-oficina', {
                         method: 'POST',
                         body: formData,
-                        credentials: 'include'
+                        credentials: 'include',
+                        headers: {
+                            [csrfHeader]: csrfToken
+                        }
                     });
 
                     const data = await response.json();
