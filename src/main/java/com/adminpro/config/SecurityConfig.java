@@ -120,7 +120,7 @@ public class SecurityConfig {
             .headers(headers -> headers
                 .frameOptions(frame -> frame.disable())
                 .contentSecurityPolicy(csp -> csp
-                    .policyDirectives("frame-ancestors 'self' https://onlinedocs.onlyoffice.com;")
+                    .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://onlinedocs.onlyoffice.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://onlinedocs.onlyoffice.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://onlinedocs.onlyoffice.com; connect-src 'self' wss: ws: https://onlinedocs.onlyoffice.com; frame-ancestors 'self' https://onlinedocs.onlyoffice.com; frame-src 'self' https://onlinedocs.onlyoffice.com https://view.officeapps.live.com;")
                 )
             );
 
