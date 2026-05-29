@@ -485,18 +485,21 @@
                     placeholder.innerHTML = '';
 
                     if (typeof DocsAPI === 'undefined') {
-                        console.log('DocsAPI no definido, intentando carga dinamica via proxy');
-                        try {
-                            await new Promise((resolve, reject) => {
-                                const s = document.createElement('script');
-                                s.src = '/oo-proxy/web-apps/apps/api/documents/api.js';
-                                s.onload = resolve;
-                                s.onerror = () => reject(new Error('Script no cargo'));
-                                document.head.appendChild(s);
-                            });
-                            await new Promise(r => setTimeout(r, 500));
-                        } catch (e) {
-                            console.error('Fallo carga dinamica:', e);
+                        const ooUrl = typeof onlyOfficeUrlDebug !== 'undefined' && onlyOfficeUrlDebug ? onlyOfficeUrlDebug : null;
+                        if (ooUrl) {
+                            console.log('DocsAPI no definido, intentando carga dinamica desde:', ooUrl);
+                            try {
+                                await new Promise((resolve, reject) => {
+                                    const s = document.createElement('script');
+                                    s.src = ooUrl + '/web-apps/apps/api/documents/api.js';
+                                    s.onload = resolve;
+                                    s.onerror = () => reject(new Error('Script no cargo'));
+                                    document.head.appendChild(s);
+                                });
+                                await new Promise(r => setTimeout(r, 500));
+                            } catch (e) {
+                                console.error('Fallo carga dinámica:', e);
+                            }
                         }
                     }
 

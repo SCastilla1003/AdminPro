@@ -78,7 +78,6 @@ public class DocumentController {
         model.addAttribute("breadcrumbs", breadcrumbs);
         model.addAttribute("subfolders", subfolders);
         model.addAttribute("documents", documents);
-        model.addAttribute("onlyOfficeUrl", onlyOfficeUrl.endsWith("/") ? onlyOfficeUrl.substring(0, onlyOfficeUrl.length() - 1) : onlyOfficeUrl);
         return "documentos/index";
     }
 
