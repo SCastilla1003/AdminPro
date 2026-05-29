@@ -485,8 +485,25 @@
                     placeholder.innerHTML = '';
 
                     if (typeof DocsAPI === 'undefined') {
+                        console.log('DocsAPI no definido, intentando carga dinámica...');
+                        try {
+                            await new Promise((resolve, reject) => {
+                                const s = document.createElement('script');
+                                s.src = (typeof onlyOfficeUrlDebug !== 'undefined' ? onlyOfficeUrlDebug : '') + '/web-apps/apps/api/documents/api.js';
+                                s.onload = resolve;
+                                s.onerror = () => reject(new Error('Script no cargó'));
+                                document.head.appendChild(s);
+                            });
+                            await new Promise(r => setTimeout(r, 500));
+                            console.log('DocsAPI after dynamic load:', typeof DocsAPI);
+                        } catch (e) {
+                            console.error('Fallo carga dinámica:', e);
+                        }
+                    }
+
+                    if (typeof DocsAPI === 'undefined') {
                         this.viewerError = true;
-                        console.error('DocsAPI no disponible. La URL del script ONLYOFFICE no cargó correctamente.');
+                        console.error('DocsAPI no disponible.');
                         return;
                     }
 
