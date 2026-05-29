@@ -13,8 +13,8 @@
   <div class="flex-1 flex overflow-hidden bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm transition-colors relative" x-data="{ chatSidebarOpen: false }">
 
     <!-- Sidebar: Canales + Usuarios -->
-    <div class="w-64 border-r border-slate-100 dark:border-slate-700 flex flex-col bg-slate-50/50 dark:bg-slate-800/80 transition-transform duration-300 z-50 fixed inset-y-0 left-0 lg:relative lg:z-auto" 
-         :class="chatSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
+    <div class="w-64 border-r border-slate-100 dark:border-slate-700 flex flex-col bg-slate-50/50 dark:bg-slate-800/80 transition-transform duration-300 z-50 fixed inset-y-0 left-0 lg:relative lg:translate-x-0 lg:z-auto" 
+         :class="chatSidebarOpen ? 'translate-x-0' : '-translate-x-full'">
         <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
             <h3 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Canales</h3>
             <button @click="chatSidebarOpen = false" class="lg:hidden w-6 h-6 flex items-center justify-center rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 transition-all">
