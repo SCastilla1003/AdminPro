@@ -141,11 +141,12 @@
                         <td class="px-5 py-3 text-xs text-slate-500 font-medium" th:text="${doc.size}">2.4 MB</td>
                         <td class="px-5 py-3 text-xs text-slate-400" th:text="${#temporals.format(doc.uploadDate, 'dd MMM yyyy')}">01 Ene 2024</td>
                         <td class="px-5 py-3 relative">
-                            <button type="button" @click.prevent="openMenu = (openMenu == ${doc.id}) ? -1 : ${doc.id}"
+                            <button type="button" 
+                                    th:attr="@click.prevent='openMenu = (openMenu == ' + ${doc.id} + ') ? -1 : ' + ${doc.id}"
                                     class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"/></svg>
                             </button>
-                            <div x-show="openMenu == ${doc.id}" 
+                            <div th:attr="x-show='openMenu == ' + ${doc.id}" 
                                  @click.away="openMenu = -1"
                                  style="display: none;"
                                  class="absolute right-0 top-full mt-1 z-50 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5">
