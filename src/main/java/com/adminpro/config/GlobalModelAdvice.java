@@ -12,7 +12,10 @@ public class GlobalModelAdvice {
 
     @ModelAttribute("onlyOfficeUrl")
     public String getOnlyOfficeUrl() {
-        if (onlyOfficeUrl != null && onlyOfficeUrl.endsWith("/")) {
+        if (onlyOfficeUrl == null || onlyOfficeUrl.isBlank() || onlyOfficeUrl.equals("${ONLYOFFICE_URL}")) {
+            return null;
+        }
+        if (onlyOfficeUrl.endsWith("/")) {
             return onlyOfficeUrl.substring(0, onlyOfficeUrl.length() - 1);
         }
         return onlyOfficeUrl;
