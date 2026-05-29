@@ -337,6 +337,15 @@ public class DocumentController {
         return response;
     }
 
+    @GetMapping("/generar-token-onlyoffice/{id}")
+    @ResponseBody
+    public java.util.Map<String, String> generateOnlyOfficeToken(@PathVariable Long id) {
+        String token = tokenService.generateToken(id);
+        java.util.Map<String, String> response = new java.util.HashMap<>();
+        response.put("token", token);
+        return response;
+    }
+
     private String detectFileType(String ext, String fallback) {
         if (ext == null) return fallback;
         return switch (ext.toLowerCase()) {

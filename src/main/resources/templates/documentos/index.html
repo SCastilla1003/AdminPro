@@ -428,9 +428,9 @@
             async editWithOnlyOffice(docId) {
                 this.showNewDoc = false;
                 try {
-                    const tokenResponse = await fetch(`/documentos/generar-token/${docId}`, { credentials: 'include' });
+                    const tokenResponse = await fetch(`/documentos/generar-token-onlyoffice/${docId}`, { credentials: 'include' });
                     const tokenData = await tokenResponse.json();
-                    const token = tokenData.url.split('token=')[1];
+                    const token = tokenData.token;
 
                     const configResponse = await fetch(`/api/onlyoffice/config/${token}`);
                     if (!configResponse.ok) throw new Error('Error obteniendo configuración');
