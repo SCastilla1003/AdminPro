@@ -5,6 +5,7 @@ import com.adminpro.repository.DocumentRepository;
 import com.adminpro.repository.UserRepository;
 import com.adminpro.service.OnlyOfficeService;
 import com.adminpro.service.PreviewTokenService;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -84,6 +85,11 @@ public class OnlyOfficeController {
         config.put("width", "100%");
         config.put("height", "100%");
 
+        if (onlyOfficeService.isApiKeyConfigured()) {
+            String jwt = onlyOfficeService.generateJwt(config);
+            config.put("token", jwt);
+        }
+
         return ResponseEntity.ok(config);
     }
 
@@ -131,6 +137,24 @@ public class OnlyOfficeController {
         Long docId = tokenService.validateToken(token);
         if (docId == null) {
             return ResponseEntity.status(403).build();
+        }
+
+        if (onlyOfficeService.isApiKeyConfigured()) {
+            String jwtToken = (String) body.get("token");
+            if (jwtToken != null) {
+                try {
+                    Claims claims = onlyOfficeService.validateJwt(jwtToken);
+                    if (claims == null) {
+                        return ResponseEntity.status(403).build();
+                    }
+                    Object payloadDocId = claims.get("documentId");
+                    if (payloadDocId != null && !payloadDocId.equals(docId)) {
+                        return ResponseEntity.status(403).build();
+                    }
+                } catch (Exception e) {
+                    return ResponseEntity.status(403).build();
+                }
+            }
         }
 
         Integer status = (Integer) body.get("status");
