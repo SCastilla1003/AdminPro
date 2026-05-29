@@ -26,8 +26,8 @@ public class OnlyOfficeProxyController {
     private static final Logger log = LoggerFactory.getLogger(OnlyOfficeProxyController.class);
 
     private static final List<String> HOP_BY_HOP_HEADERS = List.of(
-            "host", "connection", "proxy-connection", "transfer-encoding",
-            "upgrade", "keep-alive", "te", "trailer"
+            "host", "proxy-connection", "transfer-encoding",
+            "keep-alive", "te", "trailer"
     );
 
     private final HttpClient httpClient = HttpClient.newBuilder()
