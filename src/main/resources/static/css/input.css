@@ -1,5 +1,6 @@
-@import "tailwindcss";
-@variant dark (&:where(.dark, .dark *));
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   :root {
