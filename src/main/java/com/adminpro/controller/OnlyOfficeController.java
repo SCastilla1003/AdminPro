@@ -42,6 +42,9 @@ public class OnlyOfficeController {
     @Value("${preview.base-url:http://localhost:25565}")
     private String previewBaseUrl;
 
+    @Value("${adminpro.internal-url:#{null}}")
+    private String internalUrl;
+
     @GetMapping("/config/{token}")
     public ResponseEntity<Map<String, Object>> getConfig(@PathVariable String token) {
         try {
@@ -78,14 +81,19 @@ public class OnlyOfficeController {
             default -> "word";
         };
 
+        String baseUrlForServer = (internalUrl != null && !internalUrl.isBlank()) ? internalUrl : previewBaseUrl;
+        if (baseUrlForServer.endsWith("/")) {
+            baseUrlForServer = baseUrlForServer.substring(0, baseUrlForServer.length() - 1);
+        }
+
         Map<String, Object> document = new HashMap<>();
         document.put("fileType", ext);
         document.put("key", doc.getId() + "_" + doc.getFilePath());
         document.put("title", doc.getName());
-        document.put("url", previewBaseUrl + "/api/onlyoffice/download/" + token);
+        document.put("url", baseUrlForServer + "/api/onlyoffice/download/" + token);
 
         Map<String, Object> editorConfig = new HashMap<>();
-        editorConfig.put("callbackUrl", previewBaseUrl + "/api/onlyoffice/callback?token=" + token);
+        editorConfig.put("callbackUrl", baseUrlForServer + "/api/onlyoffice/callback?token=" + token);
         editorConfig.put("mode", "edit");
         editorConfig.put("lang", "es");
 
