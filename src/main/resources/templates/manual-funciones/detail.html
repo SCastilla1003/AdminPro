@@ -102,15 +102,15 @@
         <section th:if="${manual.functionalArea != null or manual.process != null or manual.program != null}">
           <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-700/40 rounded-2xl p-5 space-y-2">
             <div th:if="${manual.functionalArea != null}" class="flex flex-col sm:flex-row sm:items-center gap-1">
-              <span class="text-xs font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider min-w-[140px]">Área Funcional:</span>
+              <span class="text-xs font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider min-w-140">Área Funcional:</span>
               <span th:text="${manual.functionalArea}" class="text-sm text-slate-700 dark:text-slate-200 font-medium">—</span>
             </div>
             <div th:if="${manual.process != null}" class="flex flex-col sm:flex-row sm:items-center gap-1">
-              <span class="text-xs font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider min-w-[140px]">Proceso:</span>
+              <span class="text-xs font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider min-w-140">Proceso:</span>
               <span th:text="${manual.process}" class="text-sm text-slate-700 dark:text-slate-200 font-medium">—</span>
             </div>
             <div th:if="${manual.program != null}" class="flex flex-col sm:flex-row sm:items-center gap-1">
-              <span class="text-xs font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider min-w-[140px]">Programa:</span>
+              <span class="text-xs font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider min-w-140">Programa:</span>
               <span th:text="${manual.program}" class="text-sm text-slate-700 dark:text-slate-200 font-medium">—</span>
             </div>
           </div>

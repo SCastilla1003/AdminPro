@@ -50,4 +50,9 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  .min-w-700 { min-width: 700px; }
+  .min-w-800 { min-width: 800px; }
+  .min-w-900 { min-width: 900px; }
+  .min-w-140 { min-width: 140px; }
 }
