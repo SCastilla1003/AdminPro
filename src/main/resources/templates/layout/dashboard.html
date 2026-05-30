@@ -259,7 +259,7 @@
 
       </div>
     </header>
-    <main class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+    <main th:classappend="${activePage == 'chat'} ? 'p-0 overflow-hidden' : 'p-6 overflow-y-auto'" class="flex-1 custom-scrollbar">
       <th:block th:replace="${content}"/>
     </main>
   </div>
