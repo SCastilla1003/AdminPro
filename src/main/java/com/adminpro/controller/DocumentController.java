@@ -67,6 +67,9 @@ public class DocumentController {
             ? documentRepository.findByFolderIsNullOrderByNameAsc()
             : documentRepository.findByFolderOrderByNameAsc(currentFolder);
 
+        documents.removeIf(doc -> doc.getFilePath() != null
+                && !storageService.exists(DOCS_PREFIX + doc.getFilePath()));
+
         model.addAttribute("pageTitle", "Gestor Documental");
         model.addAttribute("pageSubtitle", currentFolder != null ? currentFolder.getName() : "Archivos y carpetas");
         model.addAttribute("activePage", "documentos");
