@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout/dashboard :: layout(
         pageTitle    = 'Chat Corporativo',
-        pageSubtitle = 'Comunicación en tiempo real con el equipo mediante WebSockets',
+        pageSubtitle = 'Comunicacion en tiempo real con el equipo',
         activePage   = 'chat',
         content      = ~{::chat-content}
       )}">
@@ -10,273 +10,320 @@
 <body>
 <div th:fragment="chat-content" class="h-full flex flex-col">
 
-  <div class="flex-1 flex overflow-hidden bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm transition-colors relative" x-data="{ chatSidebarOpen: false }">
+  <div class="flex-1 flex overflow-hidden bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm transition-colors relative"
+       x-data="whatsappChat()" x-init="initChat()">
 
-    <!-- Sidebar: Canales + Usuarios -->
-    <div class="w-64 border-r border-slate-100 dark:border-slate-700 flex flex-col bg-slate-50/50 dark:bg-slate-800/80 transition-transform duration-300 z-50 fixed inset-y-0 left-0 lg:relative lg:translate-x-0 lg:z-auto" 
-         :class="chatSidebarOpen ? 'translate-x-0' : '-translate-x-full'">
-        <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-            <h3 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Canales</h3>
-            <button @click="chatSidebarOpen = false" class="lg:hidden w-6 h-6 flex items-center justify-center rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 transition-all">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
+    <!-- ========== SIDEBAR ========== -->
+    <div class="flex flex-col bg-slate-50/50 dark:bg-slate-800/80 border-r border-slate-100 dark:border-slate-700 transition-all duration-300"
+         :class="!selectedUser ? 'flex w-full lg:w-96' : 'hidden lg:flex'">
+
+      <div class="p-4 bg-slate-50 dark:bg-slate-800 flex items-center justify-between border-b border-slate-100 dark:border-slate-700 flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <th:block th:with="cu=${currentUser}">
+            <img th:if="${cu != null and cu.profilePhoto != null and !cu.profilePhoto.isEmpty()}"
+                 th:src="@{/uploads/} + ${cu.profilePhoto}" class="w-10 h-10 rounded-full object-cover" alt="avatar">
+            <div th:unless="${cu != null and cu.profilePhoto != null and !cu.profilePhoto.isEmpty()}"
+                 class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm"
+                 th:text="${cu != null and cu.fullName != null} ? ${#strings.substring(cu.fullName, 0, 1)} : 'U'">U</div>
+          </th:block>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold text-slate-800 dark:text-white truncate" th:text="${currentUser?.fullName} ?: ${#authentication.name}">Yo</p>
+          </div>
         </div>
-        <div class="flex-1 overflow-y-auto p-2 space-y-1">
-            <div @click="selectChannel('general'); chatSidebarOpen = false"
-                 :class="currentChannel === 'general' && !selectedUser ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'"
-                 class="px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-2 cursor-pointer transition-all">
-                <span class="text-blue-200">#</span> general
+        <button @click="showStarred = !showStarred; if(showStarred) loadStarred()"
+                :class="showStarred ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-500' : ''"
+                class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 transition-all">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+        </button>
+      </div>
+
+      <div class="p-3 border-b border-slate-100 dark:border-slate-700">
+        <div class="relative">
+          <svg class="absolute left-3 top-2.5 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" x-model="searchQuery" @input="filterConversations()" placeholder="Buscar conversacion..."
+                 class="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-400 transition-all text-slate-700 dark:text-slate-200">
+        </div>
+      </div>
+
+      <!-- Conversation List -->
+      <div class="flex-1 overflow-y-auto custom-scrollbar">
+        <template x-if="showStarred">
+          <div>
+            <div class="px-5 py-2 text-xs font-bold text-amber-500 uppercase tracking-widest">Mensajes Destacados</div>
+            <template x-for="msg in starredMessages" :key="'star-' + msg.id">
+              <div class="px-5 py-3 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors border-b border-slate-50 dark:border-slate-700/30">
+                <div class="flex items-start gap-3">
+                  <span class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-500 flex-shrink-0 text-xs font-bold" x-text="msg.senderFullName ? msg.senderFullName[0] : 'S'">S</span>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" x-text="msg.senderFullName"></p>
+                    <p class="text-xs text-slate-500 truncate" x-text="msg.content"></p>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <div x-show="starredMessages.length === 0" class="px-5 py-8 text-center text-slate-400 text-sm">No hay mensajes destacados</div>
+          </div>
+        </template>
+
+        <template x-if="!showStarred">
+          <div>
+            <template x-for="conv in filteredConversations" :key="conv.username">
+              <div @click="openConversation(conv)"
+                   :class="selectedUser && selectedUser.username === conv.username ? 'bg-blue-50 dark:bg-blue-900/10' : ''"
+                   class="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors border-b border-slate-50 dark:border-slate-700/30">
+                <div class="relative flex-shrink-0">
+                  <img :src="'/uploads/' + conv.profilePhoto" x-show="conv.profilePhoto" class="w-12 h-12 rounded-full object-cover">
+                  <div x-show="!conv.profilePhoto" class="w-12 h-12 rounded-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center text-white font-bold text-sm" x-text="conv.fullName ? conv.fullName[0].toUpperCase() : '?'">?</div>
+                  <span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-800"
+                        :class="conv.isOnline ? 'bg-green-400' : 'bg-slate-300 dark:bg-slate-500'"></span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between">
+                    <p class="text-sm font-bold text-slate-800 dark:text-white truncate" x-text="conv.fullName"></p>
+                    <span class="text-xs text-slate-400 flex-shrink-0 ml-2" x-text="formatConvTime(conv.lastMessageTime)"></span>
+                  </div>
+                  <div class="flex items-center justify-between mt-0.5">
+                    <p class="text-xs text-slate-500 truncate" x-text="conv.lastMessage || 'Iniciar conversacion'"></p>
+                    <span x-show="conv.unreadCount > 0" x-text="conv.unreadCount" class="min-w-badge h-5 bg-green-500 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0 ml-1 px-1"></span>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <div @click="showNewChat = true" class="flex items-center gap-3 px-5 py-4 hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer transition-colors border-b border-slate-50 dark:border-slate-700/30">
+              <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              </div>
+              <span class="text-sm font-bold text-green-600">Nuevo chat</span>
             </div>
-        </div>
-
-        <div class="p-5 border-b border-slate-100 dark:border-slate-700">
-            <h3 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Usuarios</h3>
-        </div>
-        <div class="flex-1 overflow-y-auto p-2 space-y-1">
-            <template x-for="user in users" :key="user.username">
-                <div @click="selectUser(user); chatSidebarOpen = false"
-                     :class="selectedUser && selectedUser.username === user.username ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'"
-                     class="px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-2 cursor-pointer transition-all">
-                    <span class="w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></span>
-                    <span class="truncate" x-text="user.fullName"></span>
-                </div>
-            </template>
-        </div>
+          </div>
+        </template>
+      </div>
     </div>
 
-    <!-- Main Chat Area -->
-    <div class="flex-1 flex flex-col bg-white dark:bg-slate-800" x-data="chatApp()" x-init="initChat()">
+    <!-- ========== CHAT AREA ========== -->
+    <div class="flex-1 flex flex-col bg-white dark:bg-slate-800" :class="selectedUser ? 'flex' : 'hidden lg:flex'">
 
-        <!-- Chat Header -->
-        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
-            <button @click="chatSidebarOpen = !chatSidebarOpen" class="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all flex-shrink-0">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+      <!-- Empty State -->
+      <div x-show="!selectedUser" class="flex-1 flex items-center justify-center bg-slate-50/50 dark:bg-slate-800/50">
+        <div class="text-center px-6">
+          <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <svg class="w-12 h-12 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+          </div>
+          <h3 class="text-xl font-bold text-slate-600 dark:text-slate-400 mb-2">Chat Corporativo</h3>
+          <p class="text-sm text-slate-400 max-w-xs mx-auto">Selecciona una conversacion de la lista para empezar a chatear en tiempo real con tu equipo.</p>
+        </div>
+      </div>
+
+      <!-- Active Chat -->
+      <template x-if="selectedUser">
+        <div class="flex-1 flex flex-col" @click.self="messageMenuOpen = -1">
+
+          <!-- Chat Header -->
+          <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-800/80 flex-shrink-0">
+            <button @click="closeConversation()" class="lg:hidden w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 transition-all flex-shrink-0">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
             </button>
-            <template x-if="selectedUser">
-                <div class="flex items-center gap-3">
-                    <span class="w-3 h-3 rounded-full bg-green-400"></span>
-                    <div>
-                        <span class="font-bold text-slate-900 dark:text-white" x-text="selectedUser.fullName"></span>
-                        <span class="text-xs text-slate-400 ml-2">(Mensaje privado)</span>
-                    </div>
-                </div>
-            </template>
-            <template x-if="!selectedUser">
-                <div class="flex items-center gap-3">
-                    <span class="text-blue-500 font-bold">#</span>
-                    <span class="font-bold text-slate-900 dark:text-white">general</span>
-                    <span class="text-xs text-slate-400 ml-2">Canal público del equipo</span>
-                </div>
-            </template>
-        </div>
+            <div class="relative flex-shrink-0">
+              <img :src="'/uploads/' + selectedUser.profilePhoto" x-show="selectedUser.profilePhoto" class="w-10 h-10 rounded-full object-cover">
+              <div x-show="!selectedUser.profilePhoto" class="w-10 h-10 rounded-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center text-white font-bold text-sm" x-text="selectedUser.fullName ? selectedUser.fullName[0].toUpperCase() : '?'">?</div>
+              <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-slate-800"
+                    :class="selectedUser.isOnline ? 'bg-green-400' : 'bg-slate-300 dark:bg-slate-500'"></span>
+            </div>
+            <div class="flex-1 min-w-0" @click="showContactInfo = !showContactInfo">
+              <p class="text-sm font-bold text-slate-800 dark:text-white truncate cursor-pointer" x-text="selectedUser.fullName"></p>
+              <p class="text-xs" :class="selectedUser.isOnline ? 'text-green-500' : 'text-slate-400'" x-text="selectedUser.isOnline ? 'En linea' : 'Desconectado'"></p>
+            </div>
+            <div class="flex items-center gap-1">
+              <button @click="toggleSound()" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 transition-all">
+                <svg x-show="soundEnabled" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M17.95 6.05a8 8 0 010 11.9M6.5 8.5H4a1 1 0 00-1 1v5a1 1 0 001 1h2.5l4 4V4.5l-4 4z"/></svg>
+                <svg x-show="!soundEnabled" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+              </button>
+            </div>
+          </div>
 
-        <!-- Messages Area -->
-        <div id="message-area" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-            <!-- Historical Public Messages -->
-            <th:block th:if="${!selectedUser}" th:each="msg : ${messages}">
-                <div class="flex items-start gap-4" th:classappend="${msg.sender == #authentication.name} ? 'flex-row-reverse' : ''">
-                    <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shadow-sm"
-                         th:classappend="${msg.sender == #authentication.name} ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300'"
-                         th:text="${#strings.substring(msg.senderFullName != null ? msg.senderFullName : msg.sender, 0, 1)}">U</div>
-                    <div class="max-w-[70%]">
-                        <div class="flex items-center gap-2 mb-1" th:classappend="${msg.sender == #authentication.name} ? 'flex-row-reverse' : ''">
-                            <span class="text-xs font-black text-slate-800 dark:text-slate-200" th:text="${msg.senderFullName != null ? msg.senderFullName : msg.sender}">Usuario</span>
-                            <span class="text-[10px] text-slate-400 dark:text-slate-500" th:text="${#temporals.format(msg.timestamp, 'HH:mm')}">10:00</span>
-                        </div>
-                        <div class="px-4 py-2.5 rounded-2xl text-sm shadow-sm"
-                             th:classappend="${msg.sender == #authentication.name} ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-tl-none border border-slate-200 dark:border-slate-600/50'"
-                             th:text="${msg.content}">Mensaje</div>
-                    </div>
+          <!-- Messages Area -->
+          <div id="chat-messages" class="flex-1 overflow-y-auto px-4 py-3 custom-scrollbar bg-slate-50/30 dark:bg-slate-800/30">
+            <template x-for="(msg, idx) in visibleMessages" :key="msg.id">
+              <div>
+                <!-- Date Separator -->
+                <div x-show="shouldShowDate(idx)" class="flex items-center justify-center my-4 sticky top-0 z-10">
+                  <span class="text-xs bg-white dark:bg-slate-700 text-slate-500 px-4 py-1 rounded-full shadow-sm border border-slate-100 dark:border-slate-600" x-text="formatDate(msg.timestamp)"></span>
                 </div>
-            </th:block>
 
-            <!-- Dynamic Messages (public or private) -->
-            <template x-for="msg in visibleMessages" :key="msg.timestamp + msg.content">
-                <div class="flex items-start gap-4 animate-fade-in" :class="msg.sender === username ? 'flex-row-reverse' : ''">
-                    <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shadow-sm"
-                         :class="msg.sender === username ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300'"
-                         x-text="msg.senderFullName ? msg.senderFullName[0] : msg.sender[0]">U</div>
-                    <div class="max-w-[70%]">
-                        <div class="flex items-center gap-2 mb-1" :class="msg.sender === username ? 'flex-row-reverse' : ''">
-                            <span class="text-xs font-black text-slate-800 dark:text-slate-200" x-text="msg.senderFullName || msg.sender">Usuario</span>
-                            <span class="text-[10px] text-slate-400 dark:text-slate-500" x-text="formatTime(msg.timestamp)">10:00</span>
-                            <template x-if="msg.type === 'PRIVATE'">
-                                <span class="text-[9px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-full">Privado</span>
-                            </template>
-                        </div>
-                        <div class="px-4 py-2.5 rounded-2xl text-sm shadow-sm"
-                             :class="msg.sender === username ? 'bg-blue-600 text-white rounded-tr-none' : (msg.type === 'PRIVATE' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-slate-700 dark:text-slate-200 border border-emerald-200 dark:border-emerald-700/50 rounded-tl-none' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600/50 rounded-tl-none')"
-                             x-text="msg.content">Mensaje</div>
+                <!-- Message Bubble -->
+                <div class="flex items-end gap-2 mb-1.5"
+                     :class="msg.sender === username ? 'flex-row-reverse' : ''">
+
+                  <div x-show="msg.sender !== username && shouldShowAvatar(msg, idx)" class="flex-shrink-0">
+                    <img :src="'/uploads/' + msg.senderProfilePhoto" x-show="msg.senderProfilePhoto" class="w-8 h-8 rounded-full object-cover">
+                    <div x-show="!msg.senderProfilePhoto" class="w-8 h-8 rounded-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center text-xs font-bold text-white" x-text="msg.senderFullName ? msg.senderFullName[0].toUpperCase() : '?'">?</div>
+                  </div>
+                  <div x-show="msg.sender === username || !shouldShowAvatar(msg, idx)" class="w-8 flex-shrink-0"></div>
+
+                  <div class="max-w-chat group" @contextmenu.prevent="openMessageMenu($event, msg)">
+
+                    <!-- Reply Preview -->
+                    <div x-show="msg.replyToId" class="flex items-center gap-2 px-3 py-1.5 bg-slate-200/50 dark:bg-slate-700/50 border-l-2 rounded-t-xl mb-0.5 text-xs cursor-pointer"
+                         :class="msg.sender === username ? 'border-blue-300 bg-blue-100/50 dark:bg-blue-900/20 ml-auto text-right' : 'border-slate-400'"
+                         @click="scrollToMessage(msg.replyToId)">
+                      <span class="font-bold text-slate-500" x-text="msg.replyToSenderName"></span>
+                      <span class="text-slate-400 truncate" x-text="msg.replyToContent"></span>
                     </div>
+
+                    <!-- Deleted -->
+                    <div x-show="msg.isDeleted" class="px-4 py-2 rounded-2xl text-xs italic text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700/50"
+                         :class="msg.sender === username ? 'rounded-tr-none' : 'rounded-tl-none'">
+                      <svg class="w-4 h-4 inline-block mr-1 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      Eliminado
+                    </div>
+
+                    <!-- Normal Message -->
+                    <div x-show="!msg.isDeleted">
+                      <div class="px-4 py-2.5 rounded-2xl text-sm shadow-sm relative"
+                           :class="msg.sender === username ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-tl-none border border-slate-100 dark:border-slate-600'">
+                        <p x-text="msg.content" class="whitespace-pre-wrap break-words"></p>
+                        <!-- Reaction -->
+                        <div x-show="msg.reaction" class="absolute -bottom-3 right-2 bg-white dark:bg-slate-800 text-lg px-1.5 py-0.5 rounded-full shadow-md border border-slate-100 dark:border-slate-600 cursor-pointer"
+                             x-text="msg.reaction" @click="reactToMessage(msg)"></div>
+                      </div>
+                      <div class="flex items-center gap-1 mt-0.5 px-1"
+                           :class="msg.sender === username ? 'justify-end' : ''">
+                        <span x-show="msg.isEdited" class="text-xs text-slate-400 italic">(editado)</span>
+                        <!-- Checkmarks -->
+                        <template x-if="msg.sender === username">
+                          <span :class="msg.isRead ? 'text-blue-500' : 'text-slate-400'" class="text-xs">
+                            <svg class="w-4 h-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            <svg x-show="msg.isRead" class="w-4 h-4 inline -ml-2" fill="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                          </span>
+                        </template>
+                        <span class="text-xs text-slate-400" x-text="formatTime(msg.timestamp)"></span>
+                      </div>
+                    </div>
+
+                  </div>
                 </div>
+              </div>
             </template>
-        </div>
 
-        <!-- Input Area -->
-        <div class="p-6 border-t border-slate-100 dark:border-slate-700">
-            <form @submit.prevent="sendMessage()" class="relative">
-                <input type="text" x-model="newMessage"
-                       :placeholder="selectedUser ? 'Escribe un mensaje privado a ' + selectedUser.fullName + '...' : 'Escribe un mensaje en #general...'"
-                       class="w-full pl-6 pr-14 py-4 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all font-medium text-slate-700 dark:text-slate-200">
-                <button type="submit"
-                        class="absolute right-2 top-2 bottom-2 w-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center transition-all shadow-lg shadow-blue-500/20 hover:scale-105">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9-2-9-18-9 18 9 2zm0 0v-8"/></svg>
-                </button>
+            <!-- Typing Indicator -->
+            <div x-show="typingIndicator" class="flex items-end gap-2 mb-1.5 pl-10">
+              <div class="px-4 py-3 rounded-2xl rounded-tl-none bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-600 shadow-sm">
+                <div class="flex gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></span>
+                  <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse" style="animation-delay: 0.15s"></span>
+                  <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse" style="animation-delay: 0.3s"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reply Preview Bar -->
+          <div x-show="replyTo" class="px-4 py-2 bg-slate-100 dark:bg-slate-700/50 border-t border-slate-200 dark:border-slate-600 flex items-center gap-3 flex-shrink-0">
+            <div class="flex-1 min-w-0 border-l-4 border-blue-400 pl-3">
+              <p class="text-xs font-bold text-blue-500" x-text="replyTo.senderFullName"></p>
+              <p class="text-xs text-slate-500 truncate" x-text="replyTo.content"></p>
+            </div>
+            <button @click="replyTo = null" class="text-slate-400 hover:text-red-500 flex-shrink-0">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+
+          <!-- Message Input -->
+          <div class="px-4 py-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/80 flex-shrink-0">
+            <form @submit.prevent="sendMessage()" class="flex items-end gap-2">
+              <button type="button" @click="showEmoji = !showEmoji" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 transition-all flex-shrink-0">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </button>
+              <textarea x-model="newMessage" @keydown="handleKeydown($event)" @input="handleTyping()"
+                        placeholder="Escribe un mensaje..."
+                        class="flex-1 px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-2xl resize-none outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all text-sm text-slate-800 dark:text-slate-200"
+                        rows="1" style="max-height: 120px; min-height: 44px;"></textarea>
+              <button type="submit" :disabled="!newMessage.trim()"
+                      class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-white transition-all flex-shrink-0">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9 2zm0 0v-8"/></svg>
+              </button>
             </form>
+          </div>
+
         </div>
+      </template>
 
     </div>
+
+    <!-- New Chat Modal -->
+    <div x-show="showNewChat" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-cloak @click.self="showNewChat = false">
+      <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-100 dark:border-slate-700">
+        <div class="p-6">
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Nuevo Chat</h3>
+          <div class="relative mb-3">
+            <svg class="absolute left-3 top-2.5 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" x-model="newChatSearch" @input="filterUsers()" placeholder="Buscar usuario..."
+                   class="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-2xl text-sm outline-none text-slate-700 dark:text-slate-200">
+          </div>
+          <div class="max-h-64 overflow-y-auto space-y-1">
+            <template x-for="user in filteredUsers" :key="user.username">
+              <div @click="openConversation(user); showNewChat = false" class="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl cursor-pointer transition-colors">
+                <img :src="'/uploads/' + user.profilePhoto" x-show="user.profilePhoto" class="w-10 h-10 rounded-full object-cover">
+                <div x-show="!user.profilePhoto" class="w-10 h-10 rounded-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center text-white font-bold text-sm" x-text="user.fullName ? user.fullName[0].toUpperCase() : '?'">?</div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-semibold text-slate-800 dark:text-white truncate" x-text="user.fullName"></p>
+                  <p class="text-xs text-slate-400" x-text="user.email"></p>
+                </div>
+                <span class="w-2.5 h-2.5 rounded-full" :class="user.isOnline ? 'bg-green-400' : 'bg-slate-300 dark:bg-slate-500'"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Info Panel -->
+    <div x-show="showContactInfo" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-cloak @click.self="showContactInfo = false">
+      <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-100 dark:border-slate-700">
+        <div class="p-8 text-center">
+          <img :src="'/uploads/' + selectedUser.profilePhoto" x-show="selectedUser && selectedUser.profilePhoto" class="w-24 h-24 rounded-full object-cover mx-auto mb-4 shadow-lg">
+          <div x-show="!selectedUser || !selectedUser.profilePhoto" class="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-3xl mx-auto mb-4 shadow-lg" x-text="selectedUser && selectedUser.fullName ? selectedUser.fullName[0].toUpperCase() : '?'">?</div>
+          <h3 class="text-xl font-bold text-slate-900 dark:text-white" x-text="selectedUser ? selectedUser.fullName : ''"></h3>
+          <p class="text-sm text-slate-400 mt-1" x-text="selectedUser ? selectedUser.email : ''"></p>
+          <p class="text-sm mt-2" :class="selectedUser && selectedUser.isOnline ? 'text-green-500' : 'text-slate-400'" x-text="selectedUser && selectedUser.isOnline ? 'En linea' : 'Desconectado'"></p>
+        </div>
+        <div class="border-t border-slate-100 dark:border-slate-700 p-4 flex justify-center gap-3">
+          <button @click="showContactInfo = false" class="px-6 py-2 bg-slate-100 dark:bg-slate-700 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message Context Menu -->
+    <div x-show="messageMenuOpen >= 0" @click.away="messageMenuOpen = -1" class="fixed z-50 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 w-48" :style="menuStyle" x-cloak>
+      <button @click="replyAction(); messageMenuOpen = -1" class="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg> Responder
+      </button>
+      <button @click="toggleStarMessage(); messageMenuOpen = -1" class="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg> Destacar/Quitar
+      </button>
+      <button x-show="contextMessage && contextMessage.sender === username" @click="editAction(); messageMenuOpen = -1" class="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg> Editar
+      </button>
+      <button x-show="contextMessage && contextMessage.sender === username" @click="deleteAction(); messageMenuOpen = -1" class="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Eliminar
+      </button>
+      <hr class="my-1 border-slate-100 dark:border-slate-700">
+      <div class="flex justify-around px-2 py-1">
+        <button @click="reactToMessage(contextMessage, '👍'); messageMenuOpen = -1" class="text-lg hover:scale-125 transition-transform">👍</button>
+        <button @click="reactToMessage(contextMessage, '❤️'); messageMenuOpen = -1" class="text-lg hover:scale-125 transition-transform">❤️</button>
+        <button @click="reactToMessage(contextMessage, '😂'); messageMenuOpen = -1" class="text-lg hover:scale-125 transition-transform">😂</button>
+        <button @click="reactToMessage(contextMessage, '😮'); messageMenuOpen = -1" class="text-lg hover:scale-125 transition-transform">😮</button>
+        <button @click="reactToMessage(contextMessage, '😢'); messageMenuOpen = -1" class="text-lg hover:scale-125 transition-transform">😢</button>
+        <button @click="reactToMessage(contextMessage, '😡'); messageMenuOpen = -1" class="text-lg hover:scale-125 transition-transform">😡</button>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Chat Logic -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
-
-  <script th:inline="javascript">
-    function chatApp() {
-        return {
-            stompClient: null,
-            username: [[${#authentication.name}]],
-            fullName: [[${currentUser != null ? currentUser.fullName : #authentication.name}]],
-            newMessage: '',
-            dynamicMessages: [],
-            users: [],
-            selectedUser: null,
-            currentChannel: 'general',
-
-            initChat() {
-                this.fetchUsers();
-                this.connect();
-                setTimeout(() => this.scrollToBottom(), 100);
-            },
-
-            fetchUsers() {
-                fetch('/chat/usuarios')
-                    .then(r => r.json())
-                    .then(data => { this.users = data; });
-            },
-
-            selectUser(user) {
-                this.selectedUser = user;
-                this.currentChannel = null;
-                this.loadPrivateMessages(user.username);
-            },
-
-            selectChannel(channel) {
-                this.currentChannel = channel;
-                this.selectedUser = null;
-                this.dynamicMessages = this.dynamicMessages.filter(m => m.type !== 'PRIVATE');
-            },
-
-            loadPrivateMessages(withUser) {
-                fetch('/chat/privado?with=' + withUser)
-                    .then(r => r.json())
-                    .then(data => {
-                        this.dynamicMessages = this.dynamicMessages.filter(m => m.type !== 'PRIVATE');
-                        data.forEach(m => this.dynamicMessages.push(m));
-                        this.$nextTick(() => this.scrollToBottom());
-                    });
-            },
-
-            get visibleMessages() {
-                if (this.selectedUser) {
-                    return this.dynamicMessages.filter(m =>
-                        m.type === 'PRIVATE' &&
-                        ((m.sender === this.username && m.recipientUsername === this.selectedUser.username) ||
-                         (m.sender === this.selectedUser.username && m.recipientUsername === this.username))
-                    );
-                }
-                return this.dynamicMessages.filter(m => m.type !== 'PRIVATE');
-            },
-
-            connect() {
-                const socket = new SockJS('/ws-chat');
-                this.stompClient = Stomp.over(socket);
-                this.stompClient.debug = null;
-
-                this.stompClient.connect({}, (frame) => {
-                    this.stompClient.subscribe('/topic/public', (payload) => {
-                        this.onPublicMessageReceived(JSON.parse(payload.body));
-                    });
-
-                    this.stompClient.subscribe('/user/queue/private', (payload) => {
-                        this.onPrivateMessageReceived(JSON.parse(payload.body));
-                    });
-
-                    this.stompClient.send("/app/chat.addUser", {}, JSON.stringify({
-                        sender: this.username,
-                        senderFullName: this.fullName,
-                        type: 'JOIN'
-                    }));
-                });
-            },
-
-            sendMessage() {
-                if (!this.newMessage.trim() || !this.stompClient) return;
-
-                if (this.selectedUser) {
-                    const chatMessage = {
-                        sender: this.username,
-                        senderFullName: this.fullName,
-                        content: this.newMessage,
-                        type: 'PRIVATE',
-                        recipientUsername: this.selectedUser.username
-                    };
-                    this.stompClient.send("/app/chat.sendPrivate", {}, JSON.stringify(chatMessage));
-                } else {
-                    const chatMessage = {
-                        sender: this.username,
-                        senderFullName: this.fullName,
-                        content: this.newMessage,
-                        type: 'CHAT'
-                    };
-                    this.stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
-                }
-                this.newMessage = '';
-            },
-
-            onPublicMessageReceived(message) {
-                if (message.type === 'CHAT' || message.type === 'JOIN') {
-                    this.dynamicMessages.push(message);
-                    this.$nextTick(() => this.scrollToBottom());
-                }
-            },
-
-            onPrivateMessageReceived(message) {
-                if (message.type === 'PRIVATE') {
-                    this.dynamicMessages.push(message);
-                    if (this.selectedUser &&
-                        (message.sender === this.selectedUser.username || message.sender === this.username)) {
-                        this.$nextTick(() => this.scrollToBottom());
-                    }
-                }
-            },
-
-            formatTime(timestamp) {
-                const date = new Date(timestamp);
-                return date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
-            },
-
-            scrollToBottom() {
-                const area = document.getElementById('message-area');
-                if(area) area.scrollTop = area.scrollHeight;
-            }
-        }
-    }
-  </script>
-
-  <style>
-    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-    .animate-fade-in { animation: fadeIn 0.3s ease-out; }
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
+  <script th:src="@{/js/chat.js}"></script>
 
 </div>
 </body>

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import java.time.LocalDateTime;
 
 @Entity
@@ -11,24 +12,43 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class ChatMessage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 5000)
     private String content;
 
     @Column(nullable = false)
-    private String sender; // Username
+    private String sender;
 
     private String senderFullName;
+
+    private String senderProfilePhoto;
 
     @Column(nullable = false)
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    private String type; // "CHAT", "JOIN", o "PRIVATE"
+    private String type; // CHAT, JOIN, PRIVATE
 
-    private String recipientUsername; // Para mensajes privados (null = público)
+    private String recipientUsername;
+
+    private boolean isRead = false;
+
+    private boolean isEdited = false;
+
+    private boolean isDeleted = false;
+
+    private boolean isStarred = false;
+
+    private Long replyToId;
+
+    private String replyToContent;
+
+    private String replyToSenderName;
+
+    private String reaction;
 }

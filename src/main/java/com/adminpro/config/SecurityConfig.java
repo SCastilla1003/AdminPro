@@ -46,7 +46,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/onlyoffice/callback")
+                .ignoringRequestMatchers("/api/onlyoffice/callback", "/ws-chat/**")
             )
             .authenticationProvider(authenticationProvider())
             .authorizeHttpRequests(requests -> requests
@@ -57,6 +57,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/public/preview/**").permitAll()
                 .requestMatchers("/api/onlyoffice/**").permitAll()
                 .requestMatchers("/oo-proxy/**").permitAll()
+                .requestMatchers("/ws-chat/**").permitAll()
                 .requestMatchers("/fuera-de-horario").authenticated()
 
                 // Dashboard: cualquier autenticado

@@ -55,4 +55,10 @@
   .min-w-800 { min-width: 800px; }
   .min-w-900 { min-width: 900px; }
   .min-w-140 { min-width: 140px; }
+
+  .max-w-chat { max-width: 75%; }
+  .min-w-badge { min-width: 20px; }
+  .min-h-input { min-height: 44px; }
+  .max-h-input { max-height: 120px; }
+  .min-h-cell { min-height: 100px; }
 }
