@@ -3,8 +3,8 @@ package com.adminpro.controller;
 import com.adminpro.model.Document;
 import com.adminpro.repository.DocumentRepository;
 import com.adminpro.service.PreviewTokenService;
+import com.adminpro.service.StorageService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -15,9 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 @RestController
 @RequestMapping("/api/public/preview")
 @RequiredArgsConstructor
@@ -25,9 +22,9 @@ public class PublicPreviewController {
 
     private final PreviewTokenService tokenService;
     private final DocumentRepository documentRepository;
+    private final StorageService storageService;
 
-    @org.springframework.beans.factory.annotation.Value("${upload.dir:uploads/documentos/}")
-    private String uploadDir;
+    private static final String DOCS_PREFIX = "documents/";
 
     @GetMapping
     public ResponseEntity<Resource> getPublicPreview(@RequestParam String token) {
@@ -41,10 +38,10 @@ public class PublicPreviewController {
             return ResponseEntity.notFound().build();
         }
 
-        Path filePath = Paths.get(uploadDir).resolve(doc.getFilePath());
-        Resource resource = new FileSystemResource(filePath);
+        String key = DOCS_PREFIX + doc.getFilePath();
+        Resource resource = storageService.loadAsResource(key);
 
-        if (!resource.exists()) {
+        if (resource == null || !resource.exists()) {
             return ResponseEntity.notFound().build();
         }
 

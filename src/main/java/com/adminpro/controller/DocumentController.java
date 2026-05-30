@@ -5,8 +5,8 @@ import com.adminpro.model.Folder;
 import com.adminpro.repository.DocumentRepository;
 import com.adminpro.repository.FolderRepository;
 import com.adminpro.repository.UserRepository;
+import com.adminpro.service.StorageService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -20,10 +20,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -40,15 +36,15 @@ public class DocumentController {
     private final com.adminpro.service.NotificationService notificationService;
     private final com.adminpro.service.PreviewTokenService tokenService;
     private final com.adminpro.service.OnlyOfficeService onlyOfficeService;
+    private final StorageService storageService;
 
     @Value("${preview.base-url:http://localhost:25565}")
     private String previewBaseUrl;
 
-    @Value("${upload.dir:uploads/documentos/}")
-    private String uploadDir;
-
     @Value("${onlyoffice.document-server-url:https://onlinedocs.onlyoffice.com/}")
     private String onlyOfficeUrl;
+
+    private static final String DOCS_PREFIX = "documents/";
 
     @GetMapping
     public String index(@RequestParam(required = false) Long folderId, Model model) {
@@ -124,19 +120,14 @@ public class DocumentController {
         }
 
         try {
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
             String originalFilename = file.getOriginalFilename();
             String ext = (originalFilename != null && originalFilename.contains("."))
                 ? originalFilename.substring(originalFilename.lastIndexOf("."))
                 : "";
             String filename = UUID.randomUUID() + ext;
+            String key = DOCS_PREFIX + filename;
 
-            Path filePath = uploadPath.resolve(filename);
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            storageService.store(file, key);
 
             long sizeBytes = file.getSize();
             String sizeFormatted;
@@ -227,10 +218,10 @@ public class DocumentController {
         Document doc = documentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Documento no encontrado"));
 
-        Path filePath = Paths.get(uploadDir).resolve(doc.getFilePath());
-        Resource resource = new FileSystemResource(filePath);
+        String key = DOCS_PREFIX + doc.getFilePath();
+        Resource resource = storageService.loadAsResource(key);
 
-        if (!resource.exists()) {
+        if (resource == null || !resource.exists()) {
             return ResponseEntity.notFound().build();
         }
 
@@ -261,10 +252,10 @@ public class DocumentController {
         Document doc = documentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Documento no encontrado"));
 
-        Path filePath = Paths.get(uploadDir).resolve(doc.getFilePath());
-        Resource resource = new FileSystemResource(filePath);
+        String key = DOCS_PREFIX + doc.getFilePath();
+        Resource resource = storageService.loadAsResource(key);
 
-        if (!resource.exists()) {
+        if (resource == null || !resource.exists()) {
             return ResponseEntity.notFound().build();
         }
 
@@ -312,7 +303,8 @@ public class DocumentController {
             folderId = doc.getFolder() != null ? doc.getFolder().getId() : null;
             if (doc.getFilePath() != null) {
                 try {
-                    Files.deleteIfExists(Paths.get(uploadDir).resolve(doc.getFilePath()));
+                    String key = DOCS_PREFIX + doc.getFilePath();
+                    storageService.delete(key);
                 } catch (IOException ignored) {}
             }
             activityLog.log("DOCUMENTS", "DELETE", "Documento '" + doc.getName() + "' eliminado");

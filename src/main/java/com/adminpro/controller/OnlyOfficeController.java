@@ -5,22 +5,18 @@ import com.adminpro.repository.DocumentRepository;
 import com.adminpro.repository.UserRepository;
 import com.adminpro.service.OnlyOfficeService;
 import com.adminpro.service.PreviewTokenService;
+import com.adminpro.service.StorageService;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,9 +31,9 @@ public class OnlyOfficeController {
     private final UserRepository userRepository;
     private final OnlyOfficeService onlyOfficeService;
     private final PreviewTokenService tokenService;
+    private final StorageService storageService;
 
-    @Value("${upload.dir:uploads/documentos/}")
-    private String uploadDir;
+    private static final String DOCS_PREFIX = "documents/";
 
     @Value("${preview.base-url:http://localhost:25565}")
     private String previewBaseUrl;
@@ -88,7 +84,7 @@ public class OnlyOfficeController {
 
         Map<String, Object> document = new HashMap<>();
         document.put("fileType", ext);
-        long lastModified = Files.getLastModifiedTime(Paths.get(uploadDir).resolve(filePath)).toMillis();
+        long lastModified = storageService.lastModified(DOCS_PREFIX + filePath);
         document.put("key", doc.getId() + "_" + filePath + "_" + lastModified);
         document.put("title", doc.getName());
         document.put("url", baseUrlForServer + "/api/onlyoffice/download/" + token);
@@ -137,10 +133,10 @@ public class OnlyOfficeController {
             return ResponseEntity.notFound().build();
         }
 
-        Path filePath = Paths.get(uploadDir).resolve(doc.getFilePath());
-        Resource resource = new FileSystemResource(filePath);
+        String key = DOCS_PREFIX + doc.getFilePath();
+        Resource resource = storageService.loadAsResource(key);
 
-        if (!resource.exists()) {
+        if (resource == null || !resource.exists()) {
             return ResponseEntity.notFound().build();
         }
 
@@ -201,12 +197,12 @@ public class OnlyOfficeController {
             if (downloadUrl != null) {
                 Document doc = documentRepository.findById(docId).orElse(null);
                 if (doc != null) {
-                    Path filePath = Paths.get(uploadDir).resolve(doc.getFilePath());
-                    boolean success = onlyOfficeService.downloadFile(downloadUrl, filePath);
+                    String key = DOCS_PREFIX + doc.getFilePath();
+                    boolean success = onlyOfficeService.downloadFile(downloadUrl, key);
 
                     if (success) {
                         try {
-                            long sizeBytes = Files.size(filePath);
+                            long sizeBytes = storageService.size(key);
                             String sizeFormatted;
                             if (sizeBytes < 1024) {
                                 sizeFormatted = sizeBytes + " B";

@@ -180,7 +180,7 @@
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 overflow-hidden shadow-sm">
-                      <img th:if="${user.profilePhoto != null}" th:src="@{'/uploads/' + ${user.profilePhoto}}"
+                      <img th:if="${user.profilePhoto != null}" th:src="@{'/perfil/foto/' + ${user.profilePhoto}}"
                            class="w-full h-full object-cover" alt="foto">
                       <span th:if="${user.profilePhoto == null}"
                             th:text="${#strings.substring(user.fullName != null ? user.fullName : user.username, 0, 1).toUpperCase()}">U</span>

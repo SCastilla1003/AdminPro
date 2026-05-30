@@ -2,7 +2,11 @@ package com.adminpro.controller;
 
 import com.adminpro.model.User;
 import com.adminpro.repository.UserRepository;
+import com.adminpro.service.StorageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,7 +17,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
-import java.nio.file.*;
 import java.util.UUID;
 
 @Controller
@@ -23,8 +26,9 @@ public class ProfileController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final StorageService storageService;
 
-    private static final String UPLOAD_DIR = "uploads/perfiles/";
+    private static final String PROFILES_PREFIX = "profiles/";
 
     @GetMapping
     public String showProfile(@AuthenticationPrincipal UserDetails userDetails, Model model) {
@@ -73,33 +77,23 @@ public class ProfileController {
             return "redirect:/perfil";
         }
 
-        // Create upload directory if needed
-        Path uploadPath = Paths.get(UPLOAD_DIR);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        // Generate unique filename
         String originalName = photo.getOriginalFilename();
         String ext = (originalName != null && originalName.contains("."))
             ? originalName.substring(originalName.lastIndexOf("."))
             : ".jpg";
         String filename = "perfil_" + UUID.randomUUID() + ext;
+        String key = PROFILES_PREFIX + filename;
 
-        Path filePath = uploadPath.resolve(filename);
-        Files.copy(photo.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        storageService.store(photo, key);
 
-        // Update user
         User user = userRepository.findByUsername(userDetails.getUsername())
             .orElseThrow(() -> new IllegalStateException("Usuario no encontrado"));
 
-        // Delete old photo if exists
         if (user.getProfilePhoto() != null) {
-            Path oldFile = Paths.get("uploads/" + user.getProfilePhoto());
-            try { Files.deleteIfExists(oldFile); } catch (IOException ignored) {}
+            try { storageService.delete(PROFILES_PREFIX + user.getProfilePhoto()); } catch (IOException ignored) {}
         }
 
-        user.setProfilePhoto("perfiles/" + filename);
+        user.setProfilePhoto(filename);
         userRepository.save(user);
 
         redirectAttributes.addFlashAttribute("successMsg", "Foto de perfil actualizada.");
@@ -113,14 +107,29 @@ public class ProfileController {
             .orElseThrow(() -> new IllegalStateException("Usuario no encontrado"));
 
         if (user.getProfilePhoto() != null) {
-            Path oldFile = Paths.get("uploads/" + user.getProfilePhoto());
-            try { Files.deleteIfExists(oldFile); } catch (IOException ignored) {}
+            try { storageService.delete(PROFILES_PREFIX + user.getProfilePhoto()); } catch (IOException ignored) {}
             user.setProfilePhoto(null);
             userRepository.save(user);
         }
 
         redirectAttributes.addFlashAttribute("successMsg", "Foto eliminada.");
         return "redirect:/perfil";
+    }
+
+    @GetMapping("/foto/{filename}")
+    @ResponseBody
+    public ResponseEntity<Resource> servePhoto(@PathVariable String filename) {
+        if (filename.contains("/")) {
+            filename = filename.substring(filename.lastIndexOf('/') + 1);
+        }
+        String key = PROFILES_PREFIX + filename;
+        Resource resource = storageService.loadAsResource(key);
+        if (resource == null || !resource.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG)
+                .body(resource);
     }
 
     @PostMapping("/password")

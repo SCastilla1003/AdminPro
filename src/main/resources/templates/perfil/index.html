@@ -37,7 +37,7 @@
         <div class="relative inline-block mb-5">
           <div class="w-28 h-28 rounded-full bg-blue-500 flex items-center justify-center text-white text-4xl font-black mx-auto overflow-hidden ring-4 ring-blue-100">
             <img th:if="${user.profilePhoto != null}"
-                 th:src="@{'/uploads/' + ${user.profilePhoto}}"
+                 th:src="@{'/perfil/foto/' + ${user.profilePhoto}}"
                  class="w-full h-full object-cover"
                  alt="Foto de perfil">
             <span th:if="${user.profilePhoto == null}"
