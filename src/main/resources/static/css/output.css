@@ -1345,6 +1345,10 @@ body {
   margin-top: 1.5rem;
 }
 
+.mt-8 {
+  margin-top: 2rem;
+}
+
 .mt-auto {
   margin-top: auto;
 }
@@ -2099,6 +2103,10 @@ body {
   border-radius: 1.5rem;
 }
 
+.rounded-\[2\.5rem\] {
+  border-radius: 2.5rem;
+}
+
 .rounded-full {
   border-radius: 9999px;
 }
@@ -2345,6 +2353,10 @@ body {
   border-color: rgb(255 255 255 / var(--tw-border-opacity, 1));
 }
 
+.border-white\/10 {
+  border-color: rgb(255 255 255 / 0.1);
+}
+
 .border-white\/20 {
   border-color: rgb(255 255 255 / 0.2);
 }
@@ -2365,6 +2377,11 @@ body {
 .border-t-emerald-600 {
   --tw-border-opacity: 1;
   border-top-color: rgb(5 150 105 / var(--tw-border-opacity, 1));
+}
+
+.border-t-red-600 {
+  --tw-border-opacity: 1;
+  border-top-color: rgb(224 36 36 / var(--tw-border-opacity, 1));
 }
 
 .\!bg-gray-50 {
@@ -2409,6 +2426,11 @@ body {
 
 .bg-blue-300\/10 {
   background-color: rgb(164 202 254 / 0.1);
+}
+
+.bg-blue-400 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(118 169 250 / var(--tw-bg-opacity, 1));
 }
 
 .bg-blue-400\/20 {
@@ -2759,6 +2781,15 @@ body {
   --tw-gradient-stops: var(--tw-gradient-from), #7E3AF2 var(--tw-gradient-via-position), var(--tw-gradient-to);
 }
 
+.via-white {
+  --tw-gradient-to: rgb(255 255 255 / 0)  var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), #ffffff var(--tw-gradient-via-position), var(--tw-gradient-to);
+}
+
+.to-blue-50 {
+  --tw-gradient-to: #EBF5FF var(--tw-gradient-to-position);
+}
+
 .to-indigo-100 {
   --tw-gradient-to: #E5EDFF var(--tw-gradient-to-position);
 }
@@ -2777,6 +2808,10 @@ body {
 
 .to-purple-600 {
   --tw-gradient-to: #7E3AF2 var(--tw-gradient-to-position);
+}
+
+.to-slate-50 {
+  --tw-gradient-to: #f8fafc var(--tw-gradient-to-position);
 }
 
 .bg-clip-text {
@@ -3477,6 +3512,10 @@ body {
   opacity: 1;
 }
 
+.opacity-30 {
+  opacity: 0.3;
+}
+
 .opacity-50 {
   opacity: 0.5;
 }
@@ -3527,6 +3566,11 @@ body {
 
 .shadow-amber-500\/20 {
   --tw-shadow-color: rgb(245 158 11 / 0.2);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-black\/20 {
+  --tw-shadow-color: rgb(0 0 0 / 0.2);
   --tw-shadow: var(--tw-shadow-colored);
 }
 
@@ -3993,6 +4037,10 @@ body {
   background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
 }
 
+.hover\:bg-white\/20:hover {
+  background-color: rgb(255 255 255 / 0.2);
+}
+
 .hover\:text-amber-600:hover {
   --tw-text-opacity: 1;
   color: rgb(217 119 6 / var(--tw-text-opacity, 1));
@@ -4366,6 +4414,10 @@ body {
 
 .group:hover .group-hover\:opacity-100 {
   opacity: 1;
+}
+
+.group:hover .group-hover\:opacity-50 {
+  opacity: 0.5;
 }
 
 .group:hover .group-hover\:shadow-blue-500\/50 {
@@ -5233,6 +5285,10 @@ body {
 
   .lg\:justify-start {
     justify-content: flex-start;
+  }
+
+  .lg\:bg-gradient-to-tr {
+    background-image: linear-gradient(to top right, var(--tw-gradient-stops));
   }
 
   .lg\:px-8 {
