@@ -22,7 +22,7 @@ import java.io.InputStream;
 import java.net.URI;
 
 @Service
-@ConditionalOnProperty(name = "storage.backend", havingValue = "s3", matchIfMissing = true)
+@ConditionalOnProperty(name = "aws.s3.bucket")
 public class S3StorageService implements StorageService {
 
     private static final Logger log = LoggerFactory.getLogger(S3StorageService.class);
