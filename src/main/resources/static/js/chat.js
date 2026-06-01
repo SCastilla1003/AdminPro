@@ -464,9 +464,18 @@ function whatsappChat() {
 
         playNotificationSound() {
             try {
-                const audio = new Audio('/api/audio/whatsapp');
-                audio.volume = 0.5;
-                audio.play();
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(622, ctx.currentTime);
+                osc.frequency.setValueAtTime(494, ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
             } catch(e) {}
         },
 
