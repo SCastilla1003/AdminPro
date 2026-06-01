@@ -318,7 +318,7 @@ function whatsappChat() {
             this.stompClient = Stomp.over(socket);
             this.stompClient.debug = null;
 
-            this.stompClient.connect({}, (frame) => {
+            this.stompClient.connect({login: this.username}, (frame) => {
                 this.stompClient.send('/app/chat.addUser', {}, JSON.stringify({
                     sender: this.username,
                     senderFullName: this.fullName,
