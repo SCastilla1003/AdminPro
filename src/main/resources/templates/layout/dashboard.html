@@ -323,7 +323,9 @@
 
         markRead(n) {
           if (!n.isRead) {
-            fetch('/notificaciones/' + n.id + '/leer', { method: 'POST' });
+            const csrf = document.querySelector('meta[name="_csrf"]').content;
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+            fetch('/notificaciones/' + n.id + '/leer', { method: 'POST', headers: { [csrfHeader]: csrf } });
             n.isRead = true;
             this.unreadCount = Math.max(0, this.unreadCount - 1);
           }
@@ -331,7 +333,9 @@
         },
 
         markAllRead() {
-          fetch('/notificaciones/leer-todas', { method: 'POST' });
+          const csrf = document.querySelector('meta[name="_csrf"]').content;
+          const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+          fetch('/notificaciones/leer-todas', { method: 'POST', headers: { [csrfHeader]: csrf } });
           this.notifications.forEach(n => n.isRead = true);
           this.unreadCount = 0;
         },
