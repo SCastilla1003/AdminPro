@@ -8,9 +8,9 @@
       )}">
 <head></head>
 <body>
-<div th:fragment="chat-content" class="h-full flex flex-col">
+<div th:fragment="chat-content" class="h-full flex flex-col min-h-0">
 
-  <div class="flex-1 flex overflow-hidden bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm transition-colors relative"
+  <div class="flex-1 flex overflow-hidden bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm transition-colors relative min-h-0"
        th:attr="data-username=${#authentication.name}, data-fullname=${currentUser?.fullName ?: #authentication.name}"
        x-data="whatsappChat()" x-init="initChat($el)">
 
