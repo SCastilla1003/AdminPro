@@ -40,9 +40,7 @@ public class ChatController {
     // ========== PAGINA PRINCIPAL ==========
 
     @GetMapping("/chat")
-    public String chat(Model model, Authentication auth, jakarta.servlet.http.HttpSession session) {
-        session.setAttribute("ws-username", auth.getName());
-
+    public String chat(Model model, Authentication auth) {
         model.addAttribute("pageTitle", "Chat Corporativo");
         model.addAttribute("pageSubtitle", "Comunicacion en tiempo real con el equipo");
         model.addAttribute("activePage", "chat");
@@ -332,25 +330,27 @@ public class ChatController {
 
         Map<String, Object> saved = handleSendMessage(payload, auth, "PRIVATE");
 
+        String sender = auth != null ? auth.getName() : (String) payload.get("sender");
         messagingTemplate.convertAndSendToUser(recipientUsername, "/queue/private", saved);
-        messagingTemplate.convertAndSendToUser(auth.getName(), "/queue/private", saved);
+        messagingTemplate.convertAndSendToUser(sender, "/queue/private", saved);
 
-        broadcastConversationUpdates(auth.getName());
+        broadcastConversationUpdates(sender);
         broadcastConversationUpdates(recipientUsername);
     }
 
     @MessageMapping("/chat.addUser")
     @SendTo("/topic/public")
     public Map<String, Object> addUser(@Payload Map<String, Object> payload, Authentication auth) {
+        String sender = auth != null ? auth.getName() : (String) payload.get("sender");
         ChatMessage chatMessage = ChatMessage.builder()
-                .sender(auth.getName())
-                .senderFullName(getUserFullName(auth))
+                .sender(sender)
+                .senderFullName(getUserFullName(sender))
                 .content("se ha conectado")
                 .type("JOIN")
                 .timestamp(LocalDateTime.now())
                 .build();
         chatMessageRepository.save(chatMessage);
-        onlineUsers.put(auth.getName(), LocalDateTime.now());
+        onlineUsers.put(sender, LocalDateTime.now());
         Map<String, Object> result = messageToMap(chatMessage);
         result.put("onlineUsers", onlineUsers.keySet());
         return result;
@@ -359,10 +359,11 @@ public class ChatController {
     @MessageMapping("/chat.typing")
     public void typing(@Payload Map<String, Object> payload, Authentication auth) {
         String recipient = (String) payload.get("recipientUsername");
+        String sender = auth != null ? auth.getName() : (String) payload.get("sender");
         Boolean isTyping = (Boolean) payload.get("isTyping");
         Map<String, Object> event = new LinkedHashMap<>();
-        event.put("sender", auth.getName());
-        event.put("senderFullName", getUserFullName(auth));
+        event.put("sender", sender);
+        event.put("senderFullName", sender != null ? getUserFullName(sender) : "");
         event.put("isTyping", isTyping != null && isTyping);
 
         if (recipient != null) {
@@ -372,17 +373,18 @@ public class ChatController {
 
     @MessageMapping("/chat.status")
     public void status(@Payload Map<String, Object> payload, Authentication auth) {
+        String username = auth != null ? auth.getName() : (String) payload.get("sender");
         String type = (String) payload.get("statusType");
         if ("online".equals(type)) {
-            onlineUsers.put(auth.getName(), LocalDateTime.now());
+            onlineUsers.put(username, LocalDateTime.now());
             Map<String, Object> event = new LinkedHashMap<>();
-            event.put("username", auth.getName());
+            event.put("username", username);
             event.put("isOnline", true);
             messagingTemplate.convertAndSend("/topic/presence", event);
         } else if ("offline".equals(type)) {
-            onlineUsers.remove(auth.getName());
+            onlineUsers.remove(username);
             Map<String, Object> event = new LinkedHashMap<>();
-            event.put("username", auth.getName());
+            event.put("username", username);
             event.put("isOnline", false);
             messagingTemplate.convertAndSend("/topic/presence", event);
         }
@@ -391,11 +393,12 @@ public class ChatController {
     // ========== METODOS PRIVADOS ==========
 
     private Map<String, Object> handleSendMessage(Map<String, Object> payload, Authentication auth, String type) {
+        String sender = auth != null ? auth.getName() : (String) payload.get("sender");
         String content = (String) payload.get("content");
         String recipientUsername = (String) payload.get("recipientUsername");
         Long replyToId = payload.get("replyToId") != null ? Long.valueOf(payload.get("replyToId").toString()) : null;
 
-        User user = userRepository.findByUsername(auth.getName()).orElse(null);
+        User user = userRepository.findByUsername(sender).orElse(null);
         String replyContent = null;
         String replySenderName = null;
 
@@ -418,8 +421,8 @@ public class ChatController {
 
         ChatMessage chatMessage = ChatMessage.builder()
                 .content(content)
-                .sender(auth.getName())
-                .senderFullName(getUserFullName(auth))
+                .sender(sender)
+                .senderFullName(getUserFullName(sender))
                 .senderProfilePhoto(user != null ? user.getProfilePhoto() : null)
                 .type(type)
                 .recipientUsername(recipientUsername)
@@ -434,10 +437,10 @@ public class ChatController {
         return messageToMap(chatMessage);
     }
 
-    private String getUserFullName(Authentication auth) {
-        return userRepository.findByUsername(auth.getName())
+    private String getUserFullName(String username) {
+        return userRepository.findByUsername(username)
                 .map(u -> u.getFullName() != null ? u.getFullName() : u.getUsername())
-                .orElse(auth.getName());
+                .orElse(username);
     }
 
     private Map<String, Object> messageToMap(ChatMessage m) {
