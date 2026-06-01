@@ -1,10 +1,18 @@
 package com.adminpro.config;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.messaging.simp.stomp.StompCommand;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor;
+
+import java.security.Principal;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -21,10 +29,30 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws-chat")
                 .setAllowedOriginPatterns("*")
+                .addInterceptors(new HttpSessionHandshakeInterceptor())
                 .withSockJS()
                 .setClientLibraryUrl("https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js")
                 .setStreamBytesLimit(512 * 1024)
                 .setHttpMessageCacheSize(1000)
                 .setDisconnectDelay(30 * 1000);
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(new ChannelInterceptor() {
+            @Override
+            public org.springframework.messaging.Message<?> preSend(
+                    org.springframework.messaging.Message<?> message,
+                    org.springframework.messaging.MessageChannel channel) {
+                StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+                if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
+                    String login = accessor.getLogin();
+                    if (login != null && !login.isEmpty()) {
+                        accessor.setUser(() -> login);
+                    }
+                }
+                return message;
+            }
+        });
     }
 }
