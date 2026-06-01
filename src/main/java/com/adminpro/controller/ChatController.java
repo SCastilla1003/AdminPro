@@ -40,7 +40,9 @@ public class ChatController {
     // ========== PAGINA PRINCIPAL ==========
 
     @GetMapping("/chat")
-    public String chat(Model model, Authentication auth) {
+    public String chat(Model model, Authentication auth, jakarta.servlet.http.HttpSession session) {
+        session.setAttribute("ws-username", auth.getName());
+
         model.addAttribute("pageTitle", "Chat Corporativo");
         model.addAttribute("pageSubtitle", "Comunicacion en tiempo real con el equipo");
         model.addAttribute("activePage", "chat");

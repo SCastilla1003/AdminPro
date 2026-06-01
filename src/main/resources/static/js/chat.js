@@ -225,9 +225,11 @@ function whatsappChat() {
         async markAsRead() {
             if (!this.selectedUser) return;
             try {
+                const csrf = document.querySelector('meta[name="_csrf"]').content;
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
                 await fetch('/chat/mark-read', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {'Content-Type': 'application/json', [csrfHeader]: csrf},
                     body: JSON.stringify({partner: this.selectedUser.username})
                 });
             } catch(e) {}

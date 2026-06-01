@@ -235,8 +235,8 @@
           <!-- Reply Preview Bar -->
           <div x-show="replyTo" class="px-4 py-2 bg-slate-100 dark:bg-slate-700/50 border-t border-slate-200 dark:border-slate-600 flex items-center gap-3 flex-shrink-0">
             <div class="flex-1 min-w-0 border-l-4 border-blue-400 pl-3">
-              <p class="text-xs font-bold text-blue-500" x-text="replyTo.senderFullName"></p>
-              <p class="text-xs text-slate-500 truncate" x-text="replyTo.content"></p>
+              <p class="text-xs font-bold text-blue-500" x-text="replyTo ? replyTo.senderFullName : ''"></p>
+              <p class="text-xs text-slate-500 truncate" x-text="replyTo ? replyTo.content : ''"></p>
             </div>
             <button @click="replyTo = null" class="text-slate-400 hover:text-red-500 flex-shrink-0">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -343,7 +343,7 @@
     <div x-show="showContactInfo" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-cloak @click.self="showContactInfo = false">
       <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-100 dark:border-slate-700">
         <div class="p-8 text-center">
-          <img :src="'/perfil/foto/' + selectedUser.profilePhoto" x-show="selectedUser && selectedUser.profilePhoto" class="w-24 h-24 rounded-full object-cover mx-auto mb-4 shadow-lg">
+          <img :src="selectedUser ? '/perfil/foto/' + selectedUser.profilePhoto : ''" x-show="selectedUser && selectedUser.profilePhoto" class="w-24 h-24 rounded-full object-cover mx-auto mb-4 shadow-lg">
           <div x-show="!selectedUser || !selectedUser.profilePhoto" class="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-3xl mx-auto mb-4 shadow-lg" x-text="selectedUser && selectedUser.fullName ? selectedUser.fullName[0].toUpperCase() : '?'">?</div>
           <h3 class="text-xl font-bold text-slate-900 dark:text-white" x-text="selectedUser ? selectedUser.fullName : ''"></h3>
           <p class="text-sm text-slate-400 mt-1" x-text="selectedUser ? selectedUser.email : ''"></p>
