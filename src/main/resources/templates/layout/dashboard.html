@@ -22,7 +22,7 @@
   <!-- Alpine.js & Flowbite -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 font-sans antialiased flex h-screen overflow-hidden text-slate-900 dark:text-slate-100 transition-colors duration-300">
+<body class="bg-slate-50 dark:bg-slate-900 font-sans antialiased flex h-screen h-[100dvh] overflow-hidden text-slate-900 dark:text-slate-100 transition-colors duration-300">
 
   <!-- ===== SIDEBAR ===== -->
   <aside id="sidebar" 
@@ -259,7 +259,7 @@
 
       </div>
     </header>
-    <main th:classappend="${activePage == 'chat'} ? 'p-0 overflow-hidden' : 'p-6 overflow-y-auto'" class="flex-1 custom-scrollbar">
+    <main th:classappend="${activePage == 'chat'} ? 'p-4 lg:p-6 overflow-hidden' : 'p-6 overflow-y-auto'" class="flex-1 custom-scrollbar">
       <th:block th:replace="${content}"/>
     </main>
   </div>
