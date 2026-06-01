@@ -464,13 +464,9 @@ function whatsappChat() {
 
         playNotificationSound() {
             try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, ctx.currentTime);
-                osc.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.1);
+                const audio = new Audio('https://www.soundjay.com/communication/sounds/whatsapp-incoming-1.mp3');
+                audio.volume = 0.5;
+                audio.play();
             } catch(e) {}
         },
 
