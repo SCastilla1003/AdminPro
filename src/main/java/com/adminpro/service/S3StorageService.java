@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -99,18 +99,22 @@ public class S3StorageService implements StorageService {
                     .build();
 
             var response = s3Client.getObject(request);
-            return new InputStreamResource(response) {
-                @Override
-                public long contentLength() throws IOException {
-                    return response.response().contentLength();
-                }
+            try {
+                byte[] bytes = response.readAllBytes();
+                String filename;
+                int idx = key.lastIndexOf('/');
+                filename = idx >= 0 ? key.substring(idx + 1) : key;
 
-                @Override
-                public String getFilename() {
-                    int idx = key.lastIndexOf('/');
-                    return idx >= 0 ? key.substring(idx + 1) : key;
-                }
-            };
+                return new ByteArrayResource(bytes) {
+                    @Override
+                    public String getFilename() {
+                        return filename;
+                    }
+                };
+            } catch (IOException e) {
+                log.error("Failed to read S3 object bytes for {}: {}", key, e.getMessage());
+                return null;
+            }
         } catch (NoSuchKeyException e) {
             log.warn("S3 object not found: {}", key);
             return null;
