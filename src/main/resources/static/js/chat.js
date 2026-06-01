@@ -25,9 +25,14 @@ function whatsappChat() {
         contextMessage: null,
         menuStyle: {},
 
-        initChat() {
-            this.username = /*[[${#authentication.name}]]*/ '';
-            this.fullName = /*[[${currentUser?.fullName ?: #authentication.name}]]*/ '';
+        showNewGroupModal: false,
+        newGroupName: '',
+        selectedGroupMembers: [],
+        groupSubscriptions: {},
+
+        initChat(el) {
+            this.username = el.dataset.username || '';
+            this.fullName = el.dataset.fullname || '';
             this.fetchConversations();
             this.fetchAllUsers();
             this.connectWebSocket();
@@ -85,6 +90,36 @@ function whatsappChat() {
             );
         },
 
+        // ========== GROUPS ==========
+
+        async createGroup() {
+            if (!this.newGroupName.trim() || this.selectedGroupMembers.length === 0) return;
+            try {
+                const csrf = document.querySelector('meta[name="_csrf"]').content;
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+                const res = await fetch('/chat/grupo/crear', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', [csrfHeader]: csrf },
+                    body: JSON.stringify({ name: this.newGroupName.trim(), members: this.selectedGroupMembers })
+                });
+                if (res.ok) {
+                    this.showNewGroupModal = false;
+                    this.newGroupName = '';
+                    this.selectedGroupMembers = [];
+                    await this.fetchConversations();
+                }
+            } catch(e) { console.error('Error creating group:', e); }
+        },
+
+        toggleGroupMember(username) {
+            const idx = this.selectedGroupMembers.indexOf(username);
+            if (idx >= 0) {
+                this.selectedGroupMembers.splice(idx, 1);
+            } else {
+                this.selectedGroupMembers.push(username);
+            }
+        },
+
         // ========== CHAT NAVIGATION ==========
 
         async openConversation(conv) {
@@ -101,6 +136,23 @@ function whatsappChat() {
                     this.dynamicMessages = await res.json();
                 }
             } catch(e) { console.error('Error loading messages:', e); }
+
+            if (conv.isGroup && this.stompClient) {
+                const groupId = conv.username.replace('GROUP_', '');
+                if (!this.groupSubscriptions[groupId]) {
+                    this.groupSubscriptions[groupId] = this.stompClient.subscribe('/topic/group/' + groupId, (payload) => {
+                        const msg = JSON.parse(payload.body);
+                        if (this.selectedUser && this.selectedUser.username === 'GROUP_' + msg.groupId) {
+                            this.dynamicMessages.push(msg);
+                            this.$nextTick(() => this.scrollToBottom());
+                        }
+                        this.refreshConversationList();
+                        if (msg.sender !== this.username && this.soundEnabled) {
+                            this.playNotificationSound();
+                        }
+                    });
+                }
+            }
 
             await this.markAsRead();
             await this.$nextTick();
@@ -345,7 +397,7 @@ function whatsappChat() {
         // ========== UTILITY ==========
 
         get visibleMessages() {
-            return this.dynamicMessages.filter(m => m.type === 'PRIVATE');
+            return this.dynamicMessages.filter(m => m.type === 'PRIVATE' || m.type === 'GROUP');
         },
 
         shouldShowAvatar(msg, idx) {

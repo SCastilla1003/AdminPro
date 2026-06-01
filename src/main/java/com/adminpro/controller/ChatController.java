@@ -1,8 +1,12 @@
 package com.adminpro.controller;
 
+import com.adminpro.model.ChatGroup;
 import com.adminpro.model.ChatMessage;
+import com.adminpro.model.GroupReadState;
 import com.adminpro.model.User;
+import com.adminpro.repository.ChatGroupRepository;
 import com.adminpro.repository.ChatMessageRepository;
+import com.adminpro.repository.GroupReadStateRepository;
 import com.adminpro.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +30,8 @@ public class ChatController {
 
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
+    private final ChatGroupRepository chatGroupRepository;
+    private final GroupReadStateRepository groupReadStateRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     private final Map<String, LocalDateTime> onlineUsers = new ConcurrentHashMap<>();
@@ -65,6 +71,29 @@ public class ChatController {
     @ResponseBody
     public List<Map<String, Object>> getPrivateMessages(
             @RequestParam String with, Authentication auth) {
+
+        if (with.startsWith("GROUP_")) {
+            Long groupId = Long.parseLong(with.substring(6));
+            ChatGroup group = chatGroupRepository.findById(groupId).orElse(null);
+            if (group == null) return List.of();
+
+            List<ChatMessage> messages = chatMessageRepository.findByGroupOrderByTimestampAsc(group);
+
+            User user = userRepository.findByUsername(auth.getName()).orElse(null);
+            if (user != null) {
+                GroupReadState state = groupReadStateRepository.findByGroupAndUser(group, user)
+                    .orElse(GroupReadState.builder().group(group).user(user).build());
+                state.setLastReadTime(LocalDateTime.now());
+                groupReadStateRepository.save(state);
+            }
+
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (ChatMessage m : messages) {
+                result.add(messageToMap(m));
+            }
+            return result;
+        }
+
         List<ChatMessage> messages = chatMessageRepository.findPrivateMessagesBetween(auth.getName(), with);
         chatMessageRepository.markPrivateMessagesAsRead(auth.getName(), with);
 
@@ -96,6 +125,52 @@ public class ChatController {
     @ResponseBody
     public List<Map<String, Object>> getConversations(Authentication auth) {
         return buildConversationList(auth);
+    }
+
+    @PostMapping("/chat/grupo/crear")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> createGroup(
+            @RequestBody Map<String, Object> body, Authentication auth) {
+        String name = (String) body.get("name");
+        List<String> memberUsernames = (List<String>) body.get("members");
+
+        if (name == null || name.isBlank() || memberUsernames == null || memberUsernames.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        User creator = userRepository.findByUsername(auth.getName()).orElse(null);
+        if (creator == null) return ResponseEntity.status(401).build();
+
+        ChatGroup group = ChatGroup.builder()
+                .name(name)
+                .createdBy(creator)
+                .build();
+        group.getMembers().add(creator);
+
+        for (String username : memberUsernames) {
+            userRepository.findByUsername(username).ifPresent(group.getMembers()::add);
+        }
+
+        chatGroupRepository.save(group);
+
+        for (User member : group.getMembers()) {
+            GroupReadState state = GroupReadState.builder()
+                    .group(group)
+                    .user(member)
+                    .lastReadTime(LocalDateTime.now())
+                    .build();
+            groupReadStateRepository.save(state);
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", group.getId());
+        result.put("name", group.getName());
+
+        for (User member : group.getMembers()) {
+            broadcastConversationUpdates(member.getUsername());
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/chat/search")
@@ -235,8 +310,25 @@ public class ChatController {
 
     @MessageMapping("/chat.sendPrivate")
     public void sendPrivateMessage(@Payload Map<String, Object> payload, Authentication auth) {
-        Map<String, Object> saved = handleSendMessage(payload, auth, "PRIVATE");
         String recipientUsername = (String) payload.get("recipientUsername");
+
+        if (recipientUsername != null && recipientUsername.startsWith("GROUP_")) {
+            Long groupId = Long.parseLong(recipientUsername.substring(6));
+            ChatGroup group = chatGroupRepository.findById(groupId).orElse(null);
+            if (group == null) return;
+
+            payload.put("groupId", groupId);
+            Map<String, Object> saved = handleSendMessage(payload, auth, "GROUP");
+
+            messagingTemplate.convertAndSend("/topic/group/" + groupId, saved);
+
+            for (User member : group.getMembers()) {
+                broadcastConversationUpdates(member.getUsername());
+            }
+            return;
+        }
+
+        Map<String, Object> saved = handleSendMessage(payload, auth, "PRIVATE");
 
         messagingTemplate.convertAndSendToUser(recipientUsername, "/queue/private", saved);
         messagingTemplate.convertAndSendToUser(auth.getName(), "/queue/private", saved);
@@ -313,6 +405,15 @@ public class ChatController {
             }
         }
 
+        ChatGroup group = null;
+        if ("GROUP".equals(type)) {
+            Object groupIdObj = payload.get("groupId");
+            if (groupIdObj != null) {
+                Long groupId = Long.valueOf(groupIdObj.toString());
+                group = chatGroupRepository.findById(groupId).orElse(null);
+            }
+        }
+
         ChatMessage chatMessage = ChatMessage.builder()
                 .content(content)
                 .sender(auth.getName())
@@ -320,6 +421,7 @@ public class ChatController {
                 .senderProfilePhoto(user != null ? user.getProfilePhoto() : null)
                 .type(type)
                 .recipientUsername(recipientUsername)
+                .group(group)
                 .replyToId(replyToId)
                 .replyToContent(replyContent)
                 .replyToSenderName(replySenderName)
@@ -354,14 +456,18 @@ public class ChatController {
         map.put("replyToContent", m.getReplyToContent());
         map.put("replyToSenderName", m.getReplyToSenderName());
         map.put("reaction", m.getReaction());
+        map.put("groupId", m.getGroup() != null ? m.getGroup().getId() : null);
         return map;
     }
 
     private List<Map<String, Object>> buildConversationList(Authentication auth) {
+        User currentUser = userRepository.findByUsername(auth.getName()).orElse(null);
         Set<String> partners = new LinkedHashSet<>();
         chatMessageRepository.findConversationPartners(auth.getName()).forEach(partners::add);
 
         List<Map<String, Object>> conversations = new ArrayList<>();
+
+        // Private conversations
         for (String partner : partners) {
             Optional<ChatMessage> lastMsg = chatMessageRepository.findLastPrivateMessage(auth.getName(), partner);
             long unread = chatMessageRepository.countUnreadFrom(auth.getName(), partner);
@@ -374,7 +480,7 @@ public class ChatController {
             conv.put("profilePhoto", partnerUser != null ? partnerUser.getProfilePhoto() : null);
             conv.put("isOnline", onlineUsers.containsKey(partner));
             conv.put("unreadCount", unread);
-            conv.put("isPinned", false);
+            conv.put("isGroup", false);
 
             if (lastMsg.isPresent()) {
                 ChatMessage lm = lastMsg.get();
@@ -383,6 +489,39 @@ public class ChatController {
                 conv.put("lastMessageSender", lm.getSender());
             }
             conversations.add(conv);
+        }
+
+        // Group conversations
+        if (currentUser != null) {
+            List<ChatGroup> groups = chatGroupRepository.findByMember(currentUser);
+            for (ChatGroup group : groups) {
+                Map<String, Object> conv = new LinkedHashMap<>();
+                conv.put("username", "GROUP_" + group.getId());
+                conv.put("fullName", group.getName());
+                conv.put("profilePhoto", null);
+                conv.put("isGroup", true);
+                conv.put("isOnline", false);
+
+                Optional<ChatMessage> lastMsg = chatMessageRepository.findFirstByGroupOrderByTimestampDesc(group);
+                long unread = 0;
+                GroupReadState readState = groupReadStateRepository.findByGroupAndUser(group, currentUser).orElse(null);
+                if (readState != null && readState.getLastReadTime() != null) {
+                    unread = chatMessageRepository.countGroupUnreadSince(group, readState.getLastReadTime(), auth.getName());
+                }
+                conv.put("unreadCount", unread);
+
+                if (lastMsg.isPresent()) {
+                    ChatMessage lm = lastMsg.get();
+                    String preview = lm.isDeleted() ? "Mensaje eliminado" : lm.getContent();
+                    if (!lm.getSender().equals(auth.getName())) {
+                        preview = lm.getSenderFullName() + ": " + preview;
+                    }
+                    conv.put("lastMessage", preview);
+                    conv.put("lastMessageTime", lm.getTimestamp().toString());
+                    conv.put("lastMessageSender", lm.getSender());
+                }
+                conversations.add(conv);
+            }
         }
 
         conversations.sort((a, b) -> {

@@ -1,5 +1,6 @@
 package com.adminpro.repository;
 
+import com.adminpro.model.ChatGroup;
 import com.adminpro.model.ChatMessage;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -7,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -63,4 +65,11 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     @Query("SELECT DISTINCT m.sender FROM ChatMessage m WHERE m.type = 'PRIVATE' AND m.recipientUsername = :username " +
            "UNION SELECT DISTINCT m.recipientUsername FROM ChatMessage m WHERE m.type = 'PRIVATE' AND m.sender = :username")
     List<String> findConversationPartners(@Param("username") String username);
+
+    List<ChatMessage> findByGroupOrderByTimestampAsc(ChatGroup group);
+
+    Optional<ChatMessage> findFirstByGroupOrderByTimestampDesc(ChatGroup group);
+
+    @Query("SELECT COUNT(m) FROM ChatMessage m WHERE m.group = :group AND m.timestamp > :since AND m.sender != :username AND m.isDeleted = false")
+    long countGroupUnreadSince(@Param("group") ChatGroup group, @Param("since") LocalDateTime since, @Param("username") String username);
 }

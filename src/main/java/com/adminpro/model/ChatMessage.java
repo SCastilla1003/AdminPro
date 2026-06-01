@@ -51,4 +51,8 @@ public class ChatMessage {
     private String replyToSenderName;
 
     private String reaction;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id")
+    private ChatGroup group;
 }
