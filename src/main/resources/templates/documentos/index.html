@@ -724,10 +724,14 @@
                     this.onlyOfficeEditor.destroyEditor();
                     this.onlyOfficeEditor = null;
                 }
+                const wasOnlyOffice = this.viewerType === 'OnlyOffice';
                 this.showViewer = false;
                 this.viewerUrl = '';
                 this.viewerDownloadUrl = '';
                 document.getElementById('onlyoffice-placeholder').innerHTML = '';
+                if (wasOnlyOffice) {
+                    window.location.reload();
+                }
             }
         }
     }
