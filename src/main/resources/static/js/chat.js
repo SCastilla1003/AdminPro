@@ -464,6 +464,16 @@ function whatsappChat() {
 
         playNotificationSound() {
             try {
+                const audio = new Audio('/api/audio/whatsapp');
+                audio.volume = 0.5;
+                audio.play().catch(() => this.playFallbackSound());
+            } catch(e) {
+                this.playFallbackSound();
+            }
+        },
+
+        playFallbackSound() {
+            try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
