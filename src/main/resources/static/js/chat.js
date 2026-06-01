@@ -464,7 +464,7 @@ function whatsappChat() {
 
         playNotificationSound() {
             try {
-                const audio = new Audio('https://www.soundjay.com/communication/sounds/whatsapp-incoming-1.mp3');
+                const audio = new Audio('/api/audio/whatsapp');
                 audio.volume = 0.5;
                 audio.play();
             } catch(e) {}
