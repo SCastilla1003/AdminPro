@@ -160,6 +160,8 @@ public class UserController {
         role.setName(roleName.toUpperCase().replaceAll("\\s+", "_"));
         role.setDescription(description);
         role.setPermissions(perms != null ? new HashSet<>(perms) : new HashSet<>());
+        
+        System.out.println("DEBUG: Guardando rol " + name + " con permisos: " + perms);
 
         roleRepository.save(role);
 

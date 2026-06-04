@@ -36,10 +36,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 role.getPermissions().forEach(perm -> {
                     if (perm != null && !perm.isBlank()) {
                         authorities.add(new SimpleGrantedAuthority(perm));
+                        System.out.println("DEBUG: Permiso añadido a usuario " + username + ": " + perm);
                     }
                 });
             }
         });
+
+        System.out.println("DEBUG: Total autoridades cargadas para usuario " + username + ": " + authorities);
 
         return org.springframework.security.core.userdetails.User.builder()
             .username(user.getUsername())
