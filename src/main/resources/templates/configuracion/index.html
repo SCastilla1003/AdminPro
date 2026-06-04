@@ -215,13 +215,13 @@
 </div>
 
 <script>
-    function configClockWidget() {
-        return {
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('configClockWidget', () => ({
             currentTime: '',
             init() { this.updateTime(); setInterval(() => this.updateTime(), 1000); },
             updateTime() { this.currentTime = new Date().toLocaleTimeString('es-CO'); }
-        }
-    }
+        }))
+    })
 </script>
 </body>
 </html>
