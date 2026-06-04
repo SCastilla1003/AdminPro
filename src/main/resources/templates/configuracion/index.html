@@ -212,16 +212,15 @@
 
     </div>
 
-</div>
-
-<script>
-    function clockWidget() {
-        return {
-            currentTime: '',
-            init() { this.updateTime(); setInterval(() => this.updateTime(), 1000); },
-            updateTime() { this.currentTime = new Date().toLocaleTimeString('es-CO'); }
+    <script>
+        function clockWidget() {
+            return {
+                currentTime: '',
+                init() { this.updateTime(); setInterval(() => this.updateTime(), 1000); },
+                updateTime() { this.currentTime = new Date().toLocaleTimeString('es-CO'); }
+            }
         }
-    }
-</script>
+    </script>
+</div>
 </body>
 </html>
