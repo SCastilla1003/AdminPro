@@ -1,6 +1,6 @@
 package com.adminpro.controller;
 
-import com.adminpro.repository.EmployeeRepository;
+import com.adminpro.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,14 +12,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequiredArgsConstructor
 public class OrganigramaController {
 
-    private final EmployeeRepository employeeRepository;
+    private final UserRepository userRepository;
 
     @GetMapping
     public String index(Model model) {
         model.addAttribute("pageTitle", "Organigrama Institucional");
-        model.addAttribute("pageSubtitle", "Estructura jerárquica de la empresa");
+        model.addAttribute("pageSubtitle", "Lista de usuarios del sistema");
         model.addAttribute("activePage", "organigrama");
-        model.addAttribute("employees", employeeRepository.findAll());
+        model.addAttribute("users", userRepository.findAll());
         return "organigrama/index";
     }
 }

@@ -2,7 +2,7 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout/dashboard :: layout(
         pageTitle    = 'Organigrama',
-        pageSubtitle = 'Estructura jerárquica institucional',
+        pageSubtitle = 'Lista de usuarios registrados',
         activePage   = 'organigrama',
         content      = ~{::organigrama-content}
       )}">
@@ -10,56 +10,31 @@
 <body>
 <div th:fragment="organigrama-content">
 
-    <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 min-h-[600px] flex flex-col items-center overflow-auto custom-scrollbar">
+    <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 min-h-[600px] overflow-auto custom-scrollbar">
         
         <div class="mb-10 text-center">
-            <h2 class="text-2xl font-black text-slate-800 mb-2">AdminPro S.A.S</h2>
-            <p class="text-slate-400 font-medium">Visualización de jerarquía administrativa</p>
+            <h2 class="text-2xl font-black text-slate-800 mb-2">Directorio de Usuarios</h2>
+            <p class="text-slate-400 font-medium">Visualización de usuarios del sistema</p>
         </div>
 
-        <!-- Org Chart Structure -->
-        <div class="flex flex-col items-center">
+        <!-- Users List Structure -->
+        <div class="flex flex-wrap gap-6 justify-center">
             
-            <!-- Root node (CEO/Admin) -->
-            <div th:each="emp : ${employees}" th:if="${emp.manager == null}" class="flex flex-col items-center">
-                <div class="relative p-6 bg-blue-600 rounded-3xl shadow-xl shadow-blue-500/20 text-white text-center w-64 group hover:scale-105 transition-transform duration-300">
-                    <div class="w-12 h-12 bg-white/20 rounded-2xl mx-auto mb-3 flex items-center justify-center backdrop-blur-sm">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                    </div>
-                    <div th:text="${emp.fullName}" class="font-black text-lg">Director General</div>
-                    <div th:text="${emp.position}" class="text-xs font-bold text-blue-100 uppercase tracking-widest mt-1">CEO</div>
+            <div th:each="user : ${users}" class="relative p-5 bg-white border border-slate-100 rounded-3xl shadow-sm text-center w-56 group hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                <div class="w-16 h-16 bg-slate-50 rounded-2xl mx-auto mb-3 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors overflow-hidden">
+                    <img th:if="${user.profilePhoto}" th:src="@{'/uploads/' + ${user.profilePhoto}}" class="w-full h-full object-cover" alt="Foto perfil">
+                    <svg th:unless="${user.profilePhoto}" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                 </div>
-
-                <!-- Connector line -->
-                <div class="w-px h-12 bg-slate-200"></div>
-
-                <!-- Children Container -->
-                <div class="flex gap-12 relative">
-                    <!-- Horizontal connector line -->
-                    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[calc(100%-12rem)] h-px bg-slate-200"></div>
-                    
-                    <div th:each="child : ${employees}" th:if="${child.manager != null && child.manager.id == emp.id}" class="flex flex-col items-center">
-                        <div class="w-px h-8 bg-slate-200"></div>
-                        <div class="relative p-5 bg-white border border-slate-100 rounded-3xl shadow-sm text-center w-56 group hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                            <div class="w-10 h-10 bg-slate-50 rounded-xl mx-auto mb-3 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                            </div>
-                            <div th:text="${child.fullName}" class="font-bold text-slate-800 text-sm">Gerente</div>
-                            <div th:text="${child.position}" class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Departamento</div>
-                        </div>
-                        
-                        <!-- Recursion could be done with a fragment, but for a simple org chart we'll do 2 levels -->
-                    </div>
-                </div>
+                <div th:text="${user.fullName}" class="font-bold text-slate-800 text-sm">Nombre Usuario</div>
+                <div th:text="${user.jobTitle}" class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Cargo</div>
             </div>
 
-            <!-- If no employees -->
-            <div th:if="${employees.empty}" class="py-20 text-center">
+            <!-- If no users -->
+            <div th:if="${users.empty}" class="w-full py-20 text-center">
                 <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-10 h-10 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    <svg class="w-10 h-10 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                 </div>
-                <p class="text-slate-400 font-medium">No hay empleados registrados para generar el organigrama.</p>
-                <a href="/nomina" class="mt-4 inline-block text-blue-600 font-bold hover:underline">Ir a Nómina</a>
+                <p class="text-slate-400 font-medium">No hay usuarios registrados en el sistema.</p>
             </div>
         </div>
 
