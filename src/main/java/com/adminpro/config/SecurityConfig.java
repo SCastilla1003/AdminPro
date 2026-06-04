@@ -16,6 +16,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -87,6 +88,7 @@ public class SecurityConfig {
                 .requestMatchers("/documentos/**").hasAnyAuthority("ROLE_ADMIN", "PERM_DASHBOARD")
 
                 // Organigrama
+                .requestMatchers("/organigrama/save").hasAnyAuthority("ROLE_ADMIN", "PERM_EDIT_ORGANIGRAMA")
                 .requestMatchers("/organigrama/**").hasAnyAuthority("ROLE_ADMIN", "PERM_DASHBOARD")
 
                 // Manual de Funciones — edición solo ADMIN, lectura con PERM_MANUAL
