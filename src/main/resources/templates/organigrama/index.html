@@ -8,13 +8,13 @@
       )}">
 <head></head>
 <body>
-<div th:fragment="organigrama-content" style="height: 720px; display: flex; flex-direction: column; overflow: hidden; border-radius: 1.5rem; border: 1px solid #e2e8f0;">
+<div th:fragment="organigrama-content" class="flex flex-col h-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden" style="height: 750px;">
 
     <style>
         .grid-bg {
             background-color: #f8fafc;
             background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-            background-size: 20px 20px;
+            background-size: 24px 24px;
         }
         .dark .grid-bg {
             background-color: #0f172a;
@@ -25,42 +25,46 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 
-    <div id="orgchart-app" th:data-can-edit="${canEdit}" style="display: flex; height: 100%; width: 100%; overflow: hidden; background: white;">
+    <div id="orgchart-app" th:data-can-edit="${canEdit}" class="flex h-full w-full overflow-hidden">
         
         <!-- SIDEBAR DE EDICIÓN -->
-        <div th:if="${canEdit}" style="width: 320px; min-width: 320px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 1px solid #e2e8f0; background: #f8fafc; padding: 1.5rem;">
-            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: #1e293b;">Panel de Edición</h3>
+        <div th:if="${canEdit}" class="flex flex-col border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900" style="width: 320px; min-width: 320px; flex-shrink: 0; padding: 1.5rem;">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white mb-4">Panel de Edición</h3>
             
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                <button onclick="addCustomNode()" style="flex: 1; padding: 0.5rem; background: #2563eb; color: white; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600;">+ Nota</button>
-                <button onclick="clearCanvas()" style="flex: 1; padding: 0.5rem; background: #ef4444; color: white; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600;">Limpiar</button>
+            <div class="flex gap-2 mb-4">
+                <button onclick="addCustomNode()" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all">
+                    + Nota
+                </button>
+                <button onclick="clearCanvas()" class="flex-1 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-lg transition-all">
+                    Limpiar
+                </button>
             </div>
 
-            <input type="text" oninput="filterUsers(this.value)" placeholder="Buscar usuario..." style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; margin-bottom: 1rem; font-size: 0.85rem;">
+            <input type="text" oninput="filterUsers(this.value)" placeholder="Buscar usuario..." class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm mb-4 focus:ring-2 focus:ring-blue-500 outline-none">
 
-            <div id="draggable-users-list" style="flex: 1; overflow-y: auto;" class="custom-scrollbar">
+            <div id="draggable-users-list" class="flex-1 overflow-y-auto custom-scrollbar pr-1">
                 <div th:each="user : ${users}"
                      th:attr="data-id=${user.id}, data-name=${user.fullName}, data-job=${user.jobTitle}, data-photo=${user.profilePhoto}"
                      draggable="true"
                      ondragstart="onUserDragStart(event, this)"
-                     style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; margin-bottom: 0.5rem; background: white; border: 1px solid #e2e8f0; border-radius: 0.75rem; cursor: grab;">
-                    <div style="width: 40px; height: 40px; border-radius: 0.5rem; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
-                        <img th:if="${user.profilePhoto}" th:src="@{'/uploads/' + ${user.profilePhoto}}" style="width: 100%; height: 100%; object-fit: cover;">
-                        <span th:unless="${user.profilePhoto}" style="font-size: 0.75rem; font-weight: 700;" th:text="${#strings.substring(user.fullName, 0, 1)}">U</span>
+                     class="flex items-center gap-3 p-3 mb-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl cursor-grab hover:border-blue-300 transition-all">
+                    <div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <img th:if="${user.profilePhoto}" th:src="@{'/uploads/' + ${user.profilePhoto}}" class="w-full h-full object-cover">
+                        <span th:unless="${user.profilePhoto}" class="text-xs font-bold text-slate-500" th:text="${#strings.substring(user.fullName, 0, 1)}">U</span>
                     </div>
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="font-size: 0.85rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" th:text="${user.fullName}">Nombre</div>
-                        <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase;" th:text="${user.jobTitle ?: 'Sin Cargo'}">Cargo</div>
+                    <div class="min-w-0">
+                        <div class="text-sm font-bold text-slate-900 dark:text-white truncate" th:text="${user.fullName}">Nombre</div>
+                        <div class="text-[10px] text-slate-500 uppercase truncate" th:text="${user.jobTitle ?: 'Sin Cargo'}">Cargo</div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- CANVAS -->
-        <div style="flex-grow: 1; position: relative; overflow: hidden; display: flex; flex-direction: column;">
-            <div id="viewport" class="grid-bg" style="flex-grow: 1; position: relative; overflow: hidden; cursor: grab;" ondragover="allowDrop(event)" ondrop="onNodeDrop(event)">
+        <div class="flex-grow relative overflow-hidden flex flex-col bg-white dark:bg-slate-900">
+            <div id="viewport" class="grid-bg flex-grow relative cursor-grab active:cursor-grabbing" ondragover="allowDrop(event)" ondrop="onNodeDrop(event)">
                 <div id="board" style="position: absolute; width: 4000px; height: 4000px; left: 0; top: 0; transform-origin: 0 0;">
-                    <svg id="svg-layer" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;">
+                    <svg id="svg-layer" class="absolute inset-0 w-full h-full pointer-events-none z-10">
                         <defs>
                             <marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                                 <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#94a3b8" />
@@ -69,46 +73,196 @@
                         <g id="connections-group"></g>
                         <path id="temp-line" d="" stroke="#3b82f6" stroke-width="2" stroke-dasharray="5,5" fill="none" style="display: none;" />
                     </svg>
-                    <div id="labels-container" style="position: absolute; inset: 0; z-index: 20; pointer-events: none;"></div>
-                    <div id="nodes-container" style="position: absolute; inset: 0; z-index: 30; pointer-events: none;"></div>
+                    <div id="labels-container" class="absolute inset-0 z-20 pointer-events-none"></div>
+                    <div id="nodes-container" class="absolute inset-0 z-30 pointer-events-none"></div>
                 </div>
             </div>
             
-            <!-- Controles -->
-            <div style="position: absolute; bottom: 1rem; right: 1rem; display: flex; gap: 0.5rem; z-index: 100;">
-                <button onclick="adjustZoom(0.1)" style="padding: 0.5rem 1rem; background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem;">+</button>
-                <button onclick="adjustZoom(-0.1)" style="padding: 0.5rem 1rem; background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem;">-</button>
-                <button onclick="saveOrganigrama()" style="padding: 0.5rem 1rem; background: #2563eb; color: white; border-radius: 0.5rem;">Guardar</button>
+            <div class="absolute bottom-4 right-4 flex gap-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 z-40">
+                <button onclick="adjustZoom(0.1)" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-700 dark:text-white font-bold text-sm">+</button>
+                <button onclick="adjustZoom(-0.1)" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-700 dark:text-white font-bold text-sm">-</button>
+                <button onclick="saveOrganigrama()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all">Guardar</button>
             </div>
         </div>
     </div>
 
     <script th:inline="javascript">
-        // ... (Mantener la misma lógica de JS que tenías, asegurando que renderNode usa estilos inline)
+        const appContainer = document.getElementById('orgchart-app');
+        const viewport = document.getElementById('viewport');
+        const board = document.getElementById('board');
+        const svgLayer = document.getElementById('svg-layer');
+        const connectionsGroup = document.getElementById('connections-group');
+        const tempLine = document.getElementById('temp-line');
+        const nodesContainer = document.getElementById('nodes-container');
+        const labelsContainer = document.getElementById('labels-container');
+
+        const canEdit = appContainer.getAttribute('data-can-edit') === 'true';
         const nodeWidth = 240;
         const nodeHeight = 84;
+
         let nodes = [];
         let connections = [];
         let panX = 150;
         let panY = 100;
         let zoom = 1.0;
+        let isPanning = false;
+        let startPanX = 0;
+        let startPanY = 0;
         let draggedNodeId = null;
+        let nodeDragOffsetX = 0;
+        let nodeDragOffsetY = 0;
         let isConnecting = false;
         let connectStartNodeId = null;
 
-        // ... (Tu lógica de funciones load, renderNode, etc.)
-        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadOrganigramaData();
+            viewport.addEventListener('mousedown', (e) => {
+                if (e.target === viewport || e.target === board || e.target.id === 'svg-layer' || e.target.id === 'labels-container') {
+                    isPanning = true;
+                    startPanX = e.clientX - panX;
+                    startPanY = e.clientY - panY;
+                }
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (isPanning) {
+                    panX = e.clientX - startPanX;
+                    panY = e.clientY - startPanY;
+                    updateBoardTransform();
+                } else if (draggedNodeId !== null) {
+                    const boardRect = board.getBoundingClientRect();
+                    const node = nodes.find(n => n.id === draggedNodeId);
+                    if (node) {
+                        node.x = (e.clientX - boardRect.left) / zoom - nodeDragOffsetX;
+                        node.y = (e.clientY - boardRect.top) / zoom - nodeDragOffsetY;
+                        const el = document.getElementById(node.id);
+                        if (el) {
+                            el.style.left = node.x + 'px';
+                            el.style.top = node.y + 'px';
+                        }
+                        renderConnections();
+                    }
+                } else if (isConnecting) {
+                    const boardRect = board.getBoundingClientRect();
+                    const x2 = (e.clientX - boardRect.left) / zoom;
+                    const y2 = (e.clientY - boardRect.top) / zoom;
+                    const startNode = nodes.find(n => n.id === connectStartNodeId);
+                    if (startNode) {
+                        const x1 = startNode.x + nodeWidth;
+                        const y1 = startNode.y + nodeHeight / 2;
+                        drawCurve(tempLine, x1, y1, x2, y2);
+                        tempLine.style.display = 'block';
+                    }
+                }
+            });
+            document.addEventListener('mouseup', (e) => {
+                isPanning = false;
+                draggedNodeId = null;
+                if (isConnecting) {
+                    isConnecting = false;
+                    tempLine.style.display = 'none';
+                    const boardRect = board.getBoundingClientRect();
+                    const x2 = (e.clientX - boardRect.left) / zoom;
+                    const y2 = (e.clientY - boardRect.top) / zoom;
+                    const targetNode = nodes.find(n => n.id !== connectStartNodeId && x2 >= n.x && x2 <= n.x + nodeWidth && y2 >= n.y && y2 <= n.y + nodeHeight);
+                    if (targetNode) {
+                        if (!connections.some(c => c.from === connectStartNodeId && c.to === targetNode.id)) {
+                            connections.push({ id: 'conn_' + Date.now(), from: connectStartNodeId, to: targetNode.id, label: '' });
+                            renderConnections();
+                        }
+                    }
+                    connectStartNodeId = null;
+                }
+            });
+            viewport.addEventListener('wheel', (e) => { e.preventDefault(); adjustZoom(e.deltaY > 0 ? -0.05 : 0.05); }, { passive: false });
+        });
+
+        function updateBoardTransform() { board.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`; }
+        function adjustZoom(amount) { zoom = Math.max(0.2, Math.min(2.0, zoom + amount)); updateBoardTransform(); }
+        function filterUsers(query) {
+            const list = document.getElementById('draggable-users-list');
+            const items = list.querySelectorAll('[data-id]');
+            const q = query.toLowerCase().trim();
+            items.forEach(item => {
+                const name = item.getAttribute('data-name').toLowerCase();
+                const job = item.getAttribute('data-job').toLowerCase();
+                item.style.display = (name.includes(q) || job.includes(q)) ? 'flex' : 'none';
+            });
+        }
+        function allowDrop(e) { e.preventDefault(); }
+        function onUserDragStart(e, el) {
+            e.dataTransfer.setData('text/plain', JSON.stringify({ userId: el.getAttribute('data-id'), name: el.getAttribute('data-name'), job: el.getAttribute('data-job'), photo: el.getAttribute('data-photo') }));
+        }
+        function onNodeDrop(e) {
+            e.preventDefault();
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            const boardRect = board.getBoundingClientRect();
+            const newNode = { id: 'node_' + Date.now(), userId: data.userId, fullName: data.name, jobTitle: data.job, profilePhoto: data.photo, isCustom: false, text: '', x: (e.clientX - boardRect.left) / zoom - nodeWidth / 2, y: (e.clientY - boardRect.top) / zoom - nodeHeight / 2 };
+            nodes.push(newNode);
+            renderNode(newNode);
+            renderConnections();
+        }
+        function addCustomNode() {
+            const newNode = { id: 'node_' + Date.now(), userId: null, fullName: 'Nueva Nota', jobTitle: 'Hacer clic para editar', profilePhoto: null, isCustom: true, text: '', x: 200, y: 200 };
+            nodes.push(newNode);
+            renderNode(newNode);
+        }
+        function clearCanvas() { nodes = []; connections = []; nodesContainer.innerHTML = ''; labelsContainer.innerHTML = ''; renderConnections(); }
         function renderNode(node) {
             const card = document.createElement('div');
             card.id = node.id;
-            // ESTILOS INLINE PARA EL NODO
-            card.style.cssText = `position: absolute; width: ${nodeWidth}px; height: ${nodeHeight}px; left: ${node.x}px; top: ${node.y}px; background: white; border: 1px solid #e2e8f0; border-radius: 1rem; display: flex; align-items: center; padding: 0.75rem; pointer-events: auto; z-index: 30; cursor: grab;`;
-            
-            // ... (Resto de tu lógica renderNode)
+            card.style.cssText = `position: absolute; width: ${nodeWidth}px; height: ${nodeHeight}px; left: ${node.x}px; top: ${node.y}px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; align-items: center; padding: 12px; pointer-events: auto; z-index: 30; cursor: grab; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);`;
+            card.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.port-handle') || !canEdit) return;
+                draggedNodeId = node.id;
+                const cardRect = card.getBoundingClientRect();
+                nodeDragOffsetX = (e.clientX - cardRect.left) / zoom;
+                nodeDragOffsetY = (e.clientY - cardRect.top) / zoom;
+                e.stopPropagation();
+            });
+            let innerHTML = node.isCustom ? 
+                `<div class="flex-1"><input value="${node.fullName}" onchange="updateNodeTitle('${node.id}', this.value)" class="w-full font-bold text-xs" ${canEdit?'':'readonly'}></div>` :
+                `<div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0">${node.profilePhoto ? `<img src="/uploads/${node.profilePhoto}" class="w-full h-full object-cover">` : node.fullName.substring(0,1)}</div><div class="ml-3"><div class="text-sm font-bold">${node.fullName}</div><div class="text-[10px] text-slate-500">${node.jobTitle}</div></div>`;
+            if (canEdit) innerHTML += `<div onmousedown="startConnection(event, '${node.id}')" class="port-handle absolute -right-2 top-1/2 w-4 h-4 bg-blue-500 rounded-full cursor-crosshair"></div><button onclick="deleteNode('${node.id}')" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center">×</button>`;
+            card.innerHTML = innerHTML;
             nodesContainer.appendChild(card);
         }
-        
-        // ... (El resto de tus funciones: loadOrganigramaData, renderConnections, etc.)
+        function updateNodeTitle(id, val) { const node = nodes.find(n => n.id === id); if (node) node.fullName = val; }
+        function deleteNode(id) { nodes = nodes.filter(n => n.id !== id); connections = connections.filter(c => c.from !== id && c.to !== id); document.getElementById(id).remove(); renderConnections(); }
+        function startConnection(e, nodeId) { e.stopPropagation(); isConnecting = true; connectStartNodeId = nodeId; }
+        function drawCurve(path, x1, y1, x2, y2) { path.setAttribute('d', `M ${x1} ${y1} C ${(x1+x2)/2} ${y1}, ${(x1+x2)/2} ${y2}, ${x2} ${y2}`); }
+        function renderConnections() {
+            connectionsGroup.innerHTML = ''; labelsContainer.innerHTML = '';
+            connections.forEach(conn => {
+                const from = nodes.find(n => n.id === conn.from);
+                const to = nodes.find(n => n.id === conn.to);
+                if (from && to) {
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('stroke', '#cbd5e1'); path.setAttribute('stroke-width', '2'); path.setAttribute('fill', 'none'); path.setAttribute('marker-end', 'url(#arrow)');
+                    drawCurve(path, from.x + nodeWidth, from.y + nodeHeight/2, to.x, to.y + nodeHeight/2);
+                    connectionsGroup.appendChild(path);
+                    const label = document.createElement('div');
+                    label.style.cssText = `position: absolute; left: ${(from.x+nodeWidth + to.x)/2}px; top: ${(from.y+nodeHeight/2 + to.y+nodeHeight/2)/2}px; background: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; border: 1px solid #e2e8f0;`;
+                    label.innerHTML = canEdit ? `<input value="${conn.label}" onchange="updateConnLabel('${conn.id}', this.value)" class="w-16">` : conn.label;
+                    labelsContainer.appendChild(label);
+                }
+            });
+        }
+        function updateConnLabel(id, val) { const c = connections.find(c => c.id === id); if (c) c.label = val; }
+        function saveOrganigrama() {
+            const csrf = document.querySelector('meta[name="_csrf"]').content;
+            const header = document.querySelector('meta[name="_csrf_header"]').content;
+            fetch('/organigrama/save', { method: 'POST', headers: { 'Content-Type': 'application/json', [header]: csrf }, body: JSON.stringify({ jsonData: JSON.stringify({ nodes, connections, panX, panY, zoom }) }) })
+            .then(res => res.json()).then(data => { if(data.success) alert('Guardado'); else alert('Error'); });
+        }
+        function loadOrganigramaData() {
+            fetch('/organigrama/data').then(res => res.json()).then(data => {
+                if (data.jsonData) {
+                    const d = JSON.parse(data.jsonData);
+                    nodes = d.nodes || []; connections = d.connections || []; panX = d.panX || 150; panY = d.panY || 100; zoom = d.zoom || 1.0;
+                    nodes.forEach(renderNode); renderConnections(); updateBoardTransform();
+                }
+            });
+        }
     </script>
 </div>
 </body>
