@@ -89,7 +89,7 @@ public class SecurityConfig {
 
                 // Organigrama
                 .requestMatchers("/organigrama/save").hasAnyAuthority("ROLE_ADMIN", "PERM_EDIT_ORGANIGRAMA")
-                .requestMatchers("/organigrama/**").hasAnyAuthority("ROLE_ADMIN", "PERM_DASHBOARD")
+                .requestMatchers("/organigrama/**").hasAnyAuthority("ROLE_ADMIN", "PERM_VIEW_ORGANIGRAMA", "PERM_EDIT_ORGANIGRAMA")
 
                 // Manual de Funciones — edición solo ADMIN, lectura con PERM_MANUAL
                 .requestMatchers("/manual-funciones/nuevo", "/manual-funciones/guardar",

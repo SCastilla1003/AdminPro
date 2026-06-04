@@ -128,7 +128,7 @@ public class UserController {
     @GetMapping("/roles/nuevo")
     public String newRoleForm(Model model) {
         model.addAttribute("role", new Role());
-        model.addAttribute("allPerms", List.of("PERM_DASHBOARD","PERM_PAYROLL","PERM_USERS","PERM_CHAT","PERM_INVENTORY","PERM_PLANNING","PERM_ATTENDANCE","PERM_MANUAL","PERM_EDIT_ORGANIGRAMA"));
+        model.addAttribute("allPerms", List.of("PERM_DASHBOARD","PERM_PAYROLL","PERM_USERS","PERM_CHAT","PERM_INVENTORY","PERM_PLANNING","PERM_ATTENDANCE","PERM_MANUAL","PERM_VIEW_ORGANIGRAMA","PERM_EDIT_ORGANIGRAMA"));
         model.addAttribute("pageTitle", "Nuevo Rol");
         model.addAttribute("pageSubtitle", "Crear un nuevo rol en el sistema");
         model.addAttribute("activePage", "usuarios");
@@ -140,7 +140,7 @@ public class UserController {
         Role role = roleRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Rol no encontrado: " + id));
         model.addAttribute("role", role);
-        model.addAttribute("allPerms", List.of("PERM_DASHBOARD","PERM_PAYROLL","PERM_USERS","PERM_CHAT","PERM_INVENTORY","PERM_PLANNING","PERM_ATTENDANCE","PERM_MANUAL","PERM_EDIT_ORGANIGRAMA"));
+        model.addAttribute("allPerms", List.of("PERM_DASHBOARD","PERM_PAYROLL","PERM_USERS","PERM_CHAT","PERM_INVENTORY","PERM_PLANNING","PERM_ATTENDANCE","PERM_MANUAL","PERM_VIEW_ORGANIGRAMA","PERM_EDIT_ORGANIGRAMA"));
         model.addAttribute("pageTitle", "Editar Rol");
         model.addAttribute("pageSubtitle", "Modificar permisos del rol");
         model.addAttribute("activePage", "usuarios");
